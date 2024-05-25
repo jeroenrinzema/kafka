@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package wellsync.careconnect;
+
+option go_package = "github.com/wellsync/careconnect/proto";
+
+message CaseSubmission {
+  repeated CaseQuestionAnswer answers = 3;
+}
+
+message CaseQuestionAnswer {
+  string question_id = 1;
+  string question_label = 2;
+  string question_answer = 3;
+}
