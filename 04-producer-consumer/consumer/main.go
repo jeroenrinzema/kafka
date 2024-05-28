@@ -19,8 +19,9 @@ func main() {
 func run() error {
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers("127.0.0.1:9092"),
-		kgo.ConsumerGroup("cart"),
+		kgo.ConsumerGroup("report"),
 		kgo.ConsumeTopics("purchases"),
+		// kgo.ConsumeResetOffset(kgo.NewOffset().AtEnd()),
 	)
 	if err != nil {
 		return err
@@ -28,6 +29,8 @@ func run() error {
 
 	defer client.Close()
 	ctx := context.Background()
+
+	fmt.Println("up and running!")
 
 	for {
 		fetch := client.PollFetches(ctx)
@@ -38,7 +41,7 @@ func run() error {
 		iter := fetch.RecordIter()
 		for !iter.Done() {
 			record := iter.Next()
-			fmt.Println("consuming record key:", string(record.Key), "value:", string(record.Value))
+			fmt.Println("consuming record key:", string(record.Key), "value:", string(record.Value), "partition", record.Partition, "offset", record.Offset)
 		}
 	}
 }

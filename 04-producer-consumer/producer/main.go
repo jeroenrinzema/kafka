@@ -26,9 +26,9 @@ func run() error {
 
 	ctx := context.Background()
 	record := &kgo.Record{
-		Key:   []byte("cart-abc"),
+		Key:   []byte("cart-125"),
 		Topic: "purchases",
-		Value: []byte("Milk"),
+		Value: []byte("Break"),
 	}
 
 	result := client.ProduceSync(ctx, record)

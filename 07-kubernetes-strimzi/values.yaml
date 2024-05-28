@@ -1,0 +1,13 @@
+yamlApplicationConfig:
+  kafka:
+    clusters:
+      - name: simple
+        bootstrapServers: simple-kafka-bootstrap:9092
+      - name: super-secure
+        bootstrapServers: super-secure-kafka-bootstrap:9092
+  auth:
+    type: disabled
+  management:
+    health:
+      ldap:
+        enabled: false
