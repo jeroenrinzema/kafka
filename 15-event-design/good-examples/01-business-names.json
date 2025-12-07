@@ -1,0 +1,12 @@
+{
+    "eventType": "OrderPlaced",
+    "eventVersion": "1.0.0",
+    "eventId": "550e8400-e29b-41d4-a716-446655440000",
+    "eventTimestamp": "2024-12-03T10:00:00Z",
+    "correlationId": "order-session-abc123",
+    "orderId": "order-12345",
+    "customerId": "customer-67890",
+    "orderStatus": "pending",
+    "totalAmount": 99.99,
+    "currency": "USD"
+}

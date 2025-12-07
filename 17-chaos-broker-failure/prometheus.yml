@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'kafka-jmx'
+    static_configs:
+      - targets: ['jmx-exporter-1:5556']
+        labels:
+          cluster: 'chaos-cluster'
+          service: 'kafka-broker'
+          broker_id: '1'
+      - targets: ['jmx-exporter-2:5556']
+        labels:
+          cluster: 'chaos-cluster'
+          service: 'kafka-broker'
+          broker_id: '2'
+      - targets: ['jmx-exporter-3:5556']
+        labels:
+          cluster: 'chaos-cluster'
+          service: 'kafka-broker'
+          broker_id: '3'

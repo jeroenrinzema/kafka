@@ -1,0 +1,25 @@
+{
+    "eventType": "OrderCreated",
+    "eventVersion": "1.0.0",
+    "eventId": "770e8400-e29b-41d4-a716-446655440002",
+    "eventTimestamp": "2024-12-03T10:30:00Z",
+    "orderId": "order-123",
+    "customerId": "customer-456",
+    "customerName": "John Doe",
+    "customerEmail": "john@example.com",
+    "items": [
+        {
+            "productId": "prod-001",
+            "productName": "Laptop",
+            "quantity": 1,
+            "unitPrice": 999.99
+        }
+    ],
+    "totalAmount": 999.99,
+    "currency": "USD",
+    "shippingAddress": {
+        "street": "123 Main St",
+        "city": "Boston",
+        "country": "US"
+    }
+}

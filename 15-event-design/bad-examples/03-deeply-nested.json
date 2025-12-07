@@ -1,0 +1,18 @@
+{
+    "order": {
+        "header": {
+            "meta": {
+                "data": {
+                    "id": 123,
+                    "info": {
+                        "customer": {
+                            "details": {
+                                "name": "John"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

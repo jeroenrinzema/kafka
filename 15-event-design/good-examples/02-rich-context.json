@@ -1,0 +1,20 @@
+{
+    "eventType": "OrderStatusChanged",
+    "eventVersion": "1.0.0",
+    "eventId": "660e8400-e29b-41d4-a716-446655440001",
+    "eventTimestamp": "2024-12-03T10:15:00Z",
+    "correlationId": "order-session-abc123",
+    "orderId": "order-12345",
+    "customerId": "customer-67890",
+    "previousStatus": "pending",
+    "newStatus": "shipped",
+    "changedBy": "shipping-service",
+    "reason": "package_handed_to_carrier",
+    "carrier": "FedEx",
+    "trackingNumber": "1234567890",
+    "orderDetails": {
+        "totalAmount": 99.99,
+        "currency": "USD",
+        "itemCount": 3
+    }
+}

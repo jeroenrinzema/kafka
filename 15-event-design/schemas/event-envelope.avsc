@@ -1,0 +1,51 @@
+{
+  "type": "record",
+  "name": "EventEnvelope",
+  "namespace": "com.example.events",
+  "doc": "Standard envelope for all events",
+  "fields": [
+    {
+      "name": "eventType",
+      "type": "string",
+      "doc": "Type of event in PascalCase, past tense (e.g., OrderCreated)"
+    },
+    {
+      "name": "eventVersion",
+      "type": "string",
+      "doc": "Semantic version of the event schema (e.g., 1.2.3)"
+    },
+    {
+      "name": "eventId",
+      "type": "string",
+      "doc": "Unique identifier for this event instance (UUID v4)"
+    },
+    {
+      "name": "eventTimestamp",
+      "type": "string",
+      "doc": "ISO 8601 timestamp with timezone when event occurred"
+    },
+    {
+      "name": "correlationId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "ID to trace request across multiple services"
+    },
+    {
+      "name": "causationId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "ID of the event that caused this event"
+    },
+    {
+      "name": "source",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Service or system that produced this event"
+    },
+    {
+      "name": "payload",
+      "type": "string",
+      "doc": "JSON-encoded business data for this event"
+    }
+  ]
+}

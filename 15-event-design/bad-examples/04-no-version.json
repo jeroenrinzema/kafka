@@ -1,0 +1,5 @@
+{
+    "type": "UserUpdate",
+    "userId": 123,
+    "name": "Alice"
+}

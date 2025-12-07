@@ -1,0 +1,14 @@
+{
+    "eventType": "UserProfileUpdated",
+    "eventVersion": "2.0.0",
+    "eventId": "990e8400-e29b-41d4-a716-446655440004",
+    "eventTimestamp": "2024-12-03T10:50:00Z",
+    "userId": "user-123",
+    "userName": "Alice",
+    "userEmail": "alice@example.com",
+    "phoneNumber": "+1-555-0123",
+    "preferences": {
+        "newsletter": true,
+        "notifications": true
+    }
+}
