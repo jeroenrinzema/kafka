@@ -10,6 +10,7 @@
         "flush.size": "5",
         "rotate.interval.ms": "60000",
         "rotate.schedule.interval.ms": "3600000",
+        "timezone": "UTC",
         "format.class": "io.confluent.connect.s3.format.json.JsonFormat",
         "partitioner.class": "io.confluent.connect.storage.partitioner.DefaultPartitioner",
         "storage.class": "io.confluent.connect.s3.storage.S3Storage",

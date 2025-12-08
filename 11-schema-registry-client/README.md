@@ -102,18 +102,12 @@ Open `producer/main.go` and examine the key components:
 
 The producer automatically registers the schema with Schema Registry on the first message!
 
-### Task 5: Install Dependencies for Producer
-
-```bash
-cd producer
-go mod download
-```
-
-### Task 6: Run the Producer
+### Task 5: Run the Producer
 
 Send user messages to Kafka:
 
 ```bash
+cd producer
 go run main.go
 ```
 
@@ -128,7 +122,7 @@ Delivered message to users [partition 0] at offset 0
 
 The producer sends 5 sample users to the topic.
 
-### Task 7: Verify Schema Registration
+### Task 6: Verify Schema Registration
 
 Check that the schema was automatically registered:
 
@@ -144,7 +138,7 @@ View the schema details:
 curl http://localhost:8081/subjects/users-value/versions/1 | python3 -m json.tool
 ```
 
-### Task 8: View Messages in Kafka UI
+### Task 7: View Messages in Kafka UI
 
 Open http://localhost:8080 in your browser.
 
@@ -153,7 +147,7 @@ Open http://localhost:8080 in your browser.
 3. Notice the messages show the Avro-deserialized content
 4. Navigate to "Schema Registry" to see the registered schema
 
-### Task 9: Understand the Consumer Code
+### Task 8: Understand the Consumer Code
 
 Open `consumer/main.go` and examine:
 
@@ -163,14 +157,7 @@ Open `consumer/main.go` and examine:
 
 The consumer automatically fetches the schema from Schema Registry based on the schema ID in each message!
 
-### Task 10: Install Dependencies for Consumer
-
-```bash
-cd ../consumer
-go mod download
-```
-
-### Task 11: Run the Consumer
+### Task 9: Run the Consumer
 
 In a new terminal, consume the messages:
 
@@ -194,7 +181,7 @@ Waiting for messages... (Press Ctrl+C to exit)
 
 Keep the consumer running for the next tasks.
 
-### Task 12: Produce More Messages
+### Task 10: Produce More Messages
 
 In another terminal, run the producer again:
 
@@ -205,7 +192,7 @@ go run main.go
 
 Watch the consumer terminal - it should automatically receive and deserialize the new messages!
 
-### Task 13: Test Schema Evolution
+### Task 11: Test Schema Evolution
 
 Let's evolve our schema by adding a new optional field. Create a new schema file:
 
@@ -246,7 +233,7 @@ Modify the producer to use this new schema and add a phone field to the User str
 
 The consumer will still work because the new field is optional (backward compatible)!
 
-### Task 14: View Schema Versions
+### Task 12: View Schema Versions
 
 Check all versions of the schema:
 
@@ -263,7 +250,7 @@ curl http://localhost:8081/subjects/users-value/versions/1 | python3 -m json.too
 curl http://localhost:8081/subjects/users-value/versions/2 | python3 -m json.tool
 ```
 
-### Task 15: Monitor with Kafka UI
+### Task 13: Monitor with Kafka UI
 
 In Kafka UI (http://localhost:8080):
 
@@ -272,13 +259,13 @@ In Kafka UI (http://localhost:8080):
 3. Inspect individual messages
 4. Notice how Kafka UI deserializes Avro messages automatically
 
-### Task 16: Test Error Handling
+### Task 14: Test Error Handling
 
 Try to produce a message with invalid data (e.g., wrong type for a field). The Avro serializer will reject it before sending to Kafka, ensuring data quality!
 
 You can modify the producer code to test this.
 
-### Task 17: Clean Up
+### Task 15: Clean Up
 
 Stop the consumer (Ctrl+C in its terminal).
 

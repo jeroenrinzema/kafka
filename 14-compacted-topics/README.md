@@ -311,13 +311,13 @@ Watch the consumer terminal - it should update the cache in real-time!
 To delete a user from the state store, send a `null` value (tombstone):
 
 ```bash
-echo "user-5:" | \
+echo "user-5:NULL" | \
 docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
   --topic user-profiles \
   --bootstrap-server localhost:9092 \
   --property "parse.key=true" \
   --property "key.separator=:" \
-  --property "null.marker="
+  --property "null.marker=NULL"
 ```
 
 The consumer should remove `user-5` from its cache.

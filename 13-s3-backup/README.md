@@ -174,6 +174,7 @@ Key configuration elements:
 - **s3.bucket.name**: Target S3 bucket
 - **flush.size**: Number of records before writing a file
 - **rotate.interval.ms**: Time-based file rotation
+- **timezone**: Required when using rotate.schedule.interval.ms (e.g., "UTC")
 - **format.class**: Output format (JSON, Avro, Parquet)
 - **partitioner.class**: How to organize files (time, field-based)
 - **storage.class**: S3-compatible storage implementation
@@ -207,6 +208,8 @@ curl http://localhost:8083/connectors/s3-sink/status | python3 -m json.tool
 Look for:
 - `"state": "RUNNING"`
 - All tasks should be in `"RUNNING"` state
+
+**Note**: If the connector fails with "timezone configuration must be set", ensure the `s3-sink-connector.json` includes `"timezone": "UTC"` in the configuration.
 
 ### Task 10: Produce Messages to Orders Topic
 

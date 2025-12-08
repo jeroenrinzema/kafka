@@ -15,11 +15,12 @@ import (
 	hamba "github.com/hamba/avro/v2"
 )
 
-type User struct {
-	ID        int32  `avro:"id"`
-	Username  string `avro:"username"`
-	Email     string `avro:"email"`
-	CreatedAt int64  `avro:"created_at"`
+type UserV2 struct {
+	ID        int32   `avro:"id"`
+	Username  string  `avro:"username"`
+	Email     string  `avro:"email"`
+	CreatedAt int64   `avro:"created_at"`
+	Phone     *string `avro:"phone"` // Optional field
 }
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 	brokers := getEnv("KAFKA_BROKERS", "localhost:9092")
 	schemaRegistryURL := getEnv("SCHEMA_REGISTRY_URL", "http://localhost:8081")
 	topic := "users"
-	groupID := "user-consumer-group"
+	groupID := "user-consumer-group-v2"
 
 	// Create Kafka consumer
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
@@ -69,7 +70,7 @@ func main() {
 		cancel()
 	}()
 
-	log.Printf("Starting consumer, subscribed to topic: %s\n", topic)
+	log.Printf("Starting consumer (v2), subscribed to topic: %s\n", topic)
 	log.Println("Waiting for messages... (Press Ctrl+C to exit)")
 
 	messageCount := 0
@@ -128,10 +129,11 @@ func main() {
 
 				schemaCache[schemaID] = recordSchema
 				avroSchema = recordSchema
+				log.Printf("Cached schema ID %d (version with %d fields)\n", schemaID, len(recordSchema.Fields()))
 			}
 
 			// Deserialize the Avro payload
-			var user User
+			var user UserV2
 			err = hamba.Unmarshal(avroSchema, avroPayload, &user)
 			if err != nil {
 				log.Printf("Failed to unmarshal Avro data: %v\n", err)
@@ -141,14 +143,20 @@ func main() {
 			messageCount++
 			createdTime := time.UnixMilli(user.CreatedAt)
 
-			log.Printf("📨 Message %d | Partition: %d, Offset: %d\n",
+			log.Printf("📨 Message %d | Partition: %d, Offset: %d | Schema ID: %d\n",
 				messageCount,
 				msg.TopicPartition.Partition,
-				msg.TopicPartition.Offset)
+				msg.TopicPartition.Offset,
+				schemaID)
 			log.Printf("   User ID: %d\n", user.ID)
 			log.Printf("   Username: %s\n", user.Username)
 			log.Printf("   Email: %s\n", user.Email)
 			log.Printf("   Created: %s\n", createdTime.Format(time.RFC3339))
+			if user.Phone != nil {
+				log.Printf("   Phone: %s\n", *user.Phone)
+			} else {
+				log.Printf("   Phone: <not set>\n")
+			}
 			log.Println("   " + strings.Repeat("-", 50))
 		}
 	}
