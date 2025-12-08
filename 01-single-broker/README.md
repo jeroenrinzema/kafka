@@ -14,12 +14,12 @@ Apache Kafka is a distributed event streaming platform. In this exercise, you'll
 
 1. Start the Kafka broker:
 ```bash
-docker compose -f 01-single-broker.yaml up -d
+docker compose up -d
 ```
 
 2. Verify the broker is running:
 ```bash
-docker compose -f 01-single-broker.yaml ps
+docker compose ps
 ```
 
 ## Tasks
@@ -45,7 +45,7 @@ You should see various Kafka command-line tools. These will be your primary tool
 
 Use the kafka-metadata tool to inspect the broker:
 ```bash
-kafka-broker-api-versions --bootstrap-server localhost:9092
+./kafka-broker-api-versions.sh --bootstrap-server localhost:9092
 ```
 
 This shows the API versions supported by your broker.
@@ -54,7 +54,7 @@ This shows the API versions supported by your broker.
 
 The cluster ID is a unique identifier for your Kafka cluster:
 ```bash
-kafka-cluster --bootstrap-server localhost:9092 cluster-id
+./kafka-cluster.sh cluster-id --bootstrap-server localhost:9092
 ```
 
 ## Verification

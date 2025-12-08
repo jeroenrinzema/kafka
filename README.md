@@ -51,6 +51,10 @@ Start with exercise 01 and progress sequentially.
 16. **[16-grafana-monitoring](./16-grafana-monitoring/)** - Monitoring Kafka with Prometheus and Grafana
 17. **[17-chaos-broker-failure](./17-chaos-broker-failure/)** - Chaos engineering: testing broker failures and cluster resilience
 
+### Part 6: Security
+
+18. **[18-access-control-lists](./18-access-control-lists/)** - Securing Kafka with SASL authentication and ACL authorization
+
 ## Learning Path
 
 Follow the exercises in order. Each exercise builds on concepts from previous ones.

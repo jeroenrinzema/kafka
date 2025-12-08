@@ -20,7 +20,7 @@ docker compose up -d
 
 2. Connect to the broker:
 ```bash
-docker exec -it broker
+docker exec -it broker bash
 cd /opt/kafka/bin
 ```
 
@@ -30,9 +30,7 @@ cd /opt/kafka/bin
 
 Create a simple topic called `my-first-topic`:
 ```bash
-./kafka-topics.sh --bootstrap-server localhost:9092 \
-  --create \
-  --topic my-first-topic
+./kafka-topics.sh --bootstrap-server localhost:9092 --create --topic my-first-topic
 ```
 
 ### Task 2: List All Topics
