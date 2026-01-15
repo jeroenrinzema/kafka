@@ -360,3 +360,7 @@ docker compose logs schema-registry
 - [Avro Specification](https://avro.apache.org/docs/current/spec.html)
 - [Schema Registry API](https://docs.confluent.io/platform/current/schema-registry/develop/api.html)
 - [Schema Evolution Guide](https://docs.confluent.io/platform/current/schema-registry/avro.html)
+
+## Next Steps
+
+Continue to [Exercise 3.03: Kafka Connect Fundamentals](../3.03-connect-fundamentals/) to learn about integrating external data sources with Kafka Connect.

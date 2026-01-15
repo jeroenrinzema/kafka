@@ -42,14 +42,16 @@ Advanced consumer patterns and introduction to the Kaf CLI tool.
 | [2.02-batching-and-commits](./2.02-batching-and-commits/) | Batching & Commits | Understanding auto-commit and manual offset management |
 | [2.03-retry-mechanism](./2.03-retry-mechanism/) | Retry Mechanism | Error handling and retry strategies with Dead Letter Queues |
 
-### Part 3: Schema Management
+### Part 3: Schema Management & Data Integration
 
-Managing message schemas with Confluent Schema Registry.
+Managing message schemas and integrating external data sources with Kafka Connect.
 
 | Exercise | Topic | Description |
 |----------|-------|-------------|
 | [3.01-schema-registry](./3.01-schema-registry/) | Schema Registry | Managing schemas with Confluent Schema Registry |
 | [3.02-schema-registry-client](./3.02-schema-registry-client/) | Schema Registry Client | Producing and consuming with Schema Registry in Go |
+| [3.03-connect-fundamentals](./3.03-connect-fundamentals/) | Kafka Connect Fundamentals | Kafka Connect architecture, REST API, source and sink connectors |
+| [3.04-debezium-cdc](./3.04-debezium-cdc/) | Change Data Capture | Capturing database changes with Debezium PostgreSQL connector |
 
 ### Part 4: Event Design & Stream Processing
 
@@ -132,13 +134,15 @@ Follow the exercises in order. Each part builds on concepts from previous parts:
 
 - **Part 1**: Official Apache Kafka binaries (kafka-topics, kafka-console-producer, kafka-console-consumer)
 - **Part 2**: [Kaf](https://github.com/birdayz/kaf) - A modern CLI for Apache Kafka
-- **Part 3**: [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/) - Schema management and validation
+- **Part 3**: [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/) - Schema management and validation; [Kafka Connect](https://kafka.apache.org/documentation/#connect) - Data integration framework; [Debezium](https://debezium.io/) - Change Data Capture
 - **Part 4**: [ksqlDB](https://ksqldb.io/) - Streaming SQL engine for Kafka
 - **Part 6**: [Prometheus](https://prometheus.io/) & [Grafana](https://grafana.com/) - Monitoring stack
 
 ## Additional Resources
 
 - [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
+- [Kafka Connect Documentation](https://kafka.apache.org/documentation/#connect)
+- [Debezium Documentation](https://debezium.io/documentation/)
 - [Kaf CLI Documentation](https://github.com/birdayz/kaf)
 - [Confluent Documentation](https://docs.confluent.io/)
 - [ksqlDB Documentation](https://docs.ksqldb.io/)
