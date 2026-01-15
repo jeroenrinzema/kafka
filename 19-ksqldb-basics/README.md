@@ -101,7 +101,7 @@ Leave the producer terminal open for now (don't press `Ctrl+C` yet).
 
 View all events in real-time:
 ```sql
-SELECT * FROM user_events_stream EMIT CHANGES;
+SELECT * FROM user_events_stream;
 ```
 
 This is a **push query** - it continuously outputs new data. Press `Ctrl+C` to stop.

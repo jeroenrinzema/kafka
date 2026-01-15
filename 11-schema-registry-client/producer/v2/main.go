@@ -16,7 +16,6 @@ import (
 type UserV2 struct {
 	ID        int32   `avro:"id"`
 	Username  string  `avro:"username"`
-	Email     string  `avro:"email"`
 	CreatedAt int64   `avro:"created_at"`
 	Phone     *string `avro:"phone"` // Nullable string
 }
@@ -45,7 +44,7 @@ func main() {
 	}
 
 	// Read schema v2
-	schemaBytes, err := os.ReadFile("../schemas/user-v2.avsc")
+	schemaBytes, err := os.ReadFile("../../schemas/user-v2.avsc")
 	if err != nil {
 		log.Fatalf("Failed to read schema file: %v", err)
 	}
@@ -78,11 +77,11 @@ func main() {
 	// Sample users to produce with phone numbers
 	phone1 := "+1-555-0101"
 	phone2 := "+1-555-0102"
-	
+
 	users := []UserV2{
-		{ID: 6, Username: "frank", Email: "frank@example.com", CreatedAt: time.Now().UnixMilli(), Phone: &phone1},
-		{ID: 7, Username: "grace", Email: "grace@example.com", CreatedAt: time.Now().UnixMilli(), Phone: &phone2},
-		{ID: 8, Username: "henry", Email: "henry@example.com", CreatedAt: time.Now().UnixMilli(), Phone: nil},
+		{ID: 6, Username: "frank", CreatedAt: time.Now().UnixMilli(), Phone: &phone1},
+		{ID: 7, Username: "grace", CreatedAt: time.Now().UnixMilli(), Phone: &phone2},
+		{ID: 8, Username: "henry", CreatedAt: time.Now().UnixMilli(), Phone: nil},
 	}
 
 	// Delivery report handler
@@ -133,7 +132,7 @@ func main() {
 		if user.Phone != nil {
 			phoneStr = *user.Phone
 		}
-		log.Printf("Produced user: %s (%s) - phone: %s\n", user.Username, user.Email, phoneStr)
+		log.Printf("Produced user: %s (%s) - phone: %s\n", user.Username, phoneStr)
 		time.Sleep(500 * time.Millisecond)
 	}
 

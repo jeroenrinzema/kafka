@@ -24,8 +24,13 @@
 docker compose up -d
 ```
 
-2. Install Kaf on your host machine (macOS):
+2. Install Kaf on your host machine:
 ```bash
+curl https://raw.githubusercontent.com/birdayz/kaf/master/godownloader.sh | BINDIR=$HOME/bin bash
+```
+
+```bash
+brew tap birdayz/kaf
 brew install kaf
 ```
 

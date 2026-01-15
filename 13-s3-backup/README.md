@@ -5,183 +5,109 @@
 - Understand Kafka Connect and sink connectors
 - Configure S3 Sink Connector for topic archival
 - Set up MinIO as S3-compatible object storage
-- Manage data partitioning and formatting (JSON, Avro, Parquet)
 - Implement time-based and size-based file rotation
-- Learn long-term data retention strategies with Kafka
+- Restore topics from S3 backups
 
 ## What You'll Build
 
-In this exercise, you'll create:
-1. **Kafka Cluster**: Source cluster with streaming data
+1. **Kafka Cluster**: Single broker with test topics
 2. **MinIO**: S3-compatible object storage for backups
 3. **Kafka Connect**: S3 Sink Connector for automated archival
-4. **Producer**: Generates continuous data streams
-5. **Backup Verification**: Tools to verify archived data
+4. **Recovery Tools**: Scripts to restore data from backups
 
 ## Prerequisites
 
-- Completed exercises 1-12
 - Docker and Docker Compose installed
-- Basic understanding of Kafka Connect
-- Familiarity with object storage concepts (S3)
+- Basic understanding of Kafka topics
 
 ## Architecture
 
-```mermaid
-graph LR
-    subgraph Kafka["Kafka Cluster"]
-        T1[orders topic]
-        T2[events topic]
-    end
-    
-    subgraph Connect["Kafka Connect"]
-        S3C[S3 Sink Connector]
-    end
-    
-    subgraph Storage["MinIO (S3-compatible)"]
-        B1[topics/orders/...]
-        B2[topics/events/...]
-    end
-    
-    T1 -->|consume| S3C
-    T2 -->|consume| S3C
-    S3C -->|write files| B1
-    S3C -->|write files| B2
-    
-    style Kafka fill:#e1f5ff
-    style Storage fill:#d4edda
-    style Connect fill:#f0f0f0
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Data Flow                                │
+│                                                                  │
+│  ┌─────────┐     ┌──────────────┐     ┌─────────────────────┐  │
+│  │ Kafka   │────▶│ Kafka        │────▶│ MinIO (S3)          │  │
+│  │ Topics  │     │ Connect      │     │                     │  │
+│  │         │     │ S3 Sink      │     │ topics/orders/...   │  │
+│  │ orders  │     │              │     │ topics/events/...   │  │
+│  │ events  │     │              │     │                     │  │
+│  └─────────┘     └──────────────┘     └─────────────────────┘  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-S3 Sink Connector features:
-- **Automatic Archival**: Continuously backs up topic data to S3
-- **Flexible Formats**: Support for JSON, Avro, Parquet, and more
-- **Partitioning**: Time-based and field-based partitioning
-- **Exactly-once delivery**: Prevents duplicate files
-- **Compression**: Gzip, Snappy, LZ4 support
-- **Schema Evolution**: Handles schema changes with Avro/Parquet
+## Setup
 
-## Tasks
-
-### Task 1: Start the Environment
-
-Start Kafka, MinIO, and Kafka Connect:
+Start all services:
 
 ```bash
 docker compose up -d
 ```
 
-This starts:
-- `kafka`: Kafka broker (port 9092)
-- `minio`: MinIO object storage (port 9000, console: 9001)
-- `kafka-connect`: Kafka Connect with S3 connector (port 8083)
-- `kafka-ui`: Web UI (port 8080)
+Wait about 45 seconds for Kafka Connect to download and install the S3 connector plugin.
 
-Wait about 30-45 seconds for all services to initialize.
+Verify all services are running:
 
-### Task 2: Verify Kafka is Running
+```bash
+docker compose ps
+```
+
+## Tasks
+
+### Task 1: Verify Services
 
 Check Kafka is ready:
 
 ```bash
-docker exec -it kafka /opt/kafka/bin/kafka-topics.sh \
-  --list \
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --list --bootstrap-server localhost:9092
+```
+
+Check Kafka Connect is ready:
+
+```bash
+curl -s http://localhost:8083/ | head -1
+```
+
+Access MinIO Console at http://localhost:9001
+- Username: `minioadmin`
+- Password: `minioadmin`
+
+### Task 2: Create Topics
+
+```bash
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --create --topic orders \
+  --partitions 3 --replication-factor 1 \
+  --bootstrap-server localhost:9092
+
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --create --topic events \
+  --partitions 2 --replication-factor 1 \
   --bootstrap-server localhost:9092
 ```
 
-### Task 3: Access MinIO Console
+### Task 3: Understand the Connector Configuration
 
-Open http://localhost:9001 in your browser.
-
-Login credentials:
-- **Username**: `minioadmin`
-- **Password**: `minioadmin`
-
-You should see the MinIO console dashboard.
-
-### Task 4: Create S3 Bucket
-
-In the MinIO console:
-1. Click "Buckets" in the left menu
-2. Click "Create Bucket"
-3. Name it `kafka-backup`
-4. Click "Create Bucket"
-
-Or use the MinIO CLI:
-
-```bash
-docker exec -it minio mc mb minio/kafka-backup
-```
-
-### Task 5: Create Kafka Topics
-
-Create topics that we'll archive to S3:
-
-```bash
-# Create orders topic
-docker exec -it kafka /opt/kafka/bin/kafka-topics.sh \
-  --create \
-  --topic orders \
-  --bootstrap-server localhost:9092 \
-  --partitions 3 \
-  --replication-factor 1
-
-# Create events topic
-docker exec -it kafka /opt/kafka/bin/kafka-topics.sh \
-  --create \
-  --topic events \
-  --bootstrap-server localhost:9092 \
-  --partitions 2 \
-  --replication-factor 1
-```
-
-Verify topics:
-
-```bash
-docker exec -it kafka /opt/kafka/bin/kafka-topics.sh \
-  --list \
-  --bootstrap-server localhost:9092
-```
-
-### Task 6: Verify Kafka Connect is Running
-
-Check Kafka Connect status:
-
-```bash
-curl http://localhost:8083/
-```
-
-You should see version information.
-
-List available connector plugins:
-
-```bash
-curl http://localhost:8083/connector-plugins | python3 -m json.tool
-```
-
-Look for `io.confluent.connect.s3.S3SinkConnector` in the list.
-
-### Task 7: Understand the S3 Sink Configuration
-
-Examine the connector configuration:
+View the S3 sink connector configuration:
 
 ```bash
 cat s3-sink-connector.json
 ```
 
-Key configuration elements:
-- **topics**: Which Kafka topics to backup
-- **s3.bucket.name**: Target S3 bucket
-- **flush.size**: Number of records before writing a file
-- **rotate.interval.ms**: Time-based file rotation
-- **timezone**: Required when using rotate.schedule.interval.ms (e.g., "UTC")
-- **format.class**: Output format (JSON, Avro, Parquet)
-- **partitioner.class**: How to organize files (time, field-based)
-- **storage.class**: S3-compatible storage implementation
+Key settings:
 
-### Task 8: Deploy the S3 Sink Connector
+| Setting | Value | Description |
+|---------|-------|-------------|
+| `topics` | orders,events | Topics to backup |
+| `s3.bucket.name` | kafka-backup | Target S3 bucket |
+| `flush.size` | 5 | Records per file (for testing) |
+| `rotate.interval.ms` | 60000 | Create new file every 60 seconds |
+| `format.class` | JsonFormat | Output as JSON |
+| `s3.compression.type` | gzip | Compress files |
 
-Create the connector:
+### Task 4: Deploy the S3 Sink Connector
 
 ```bash
 curl -X POST http://localhost:8083/connectors \
@@ -189,481 +115,315 @@ curl -X POST http://localhost:8083/connectors \
   -d @s3-sink-connector.json
 ```
 
-Verify it was created:
+Check connector status:
 
 ```bash
-curl http://localhost:8083/connectors
+curl -s http://localhost:8083/connectors/s3-sink/status | jq .
 ```
 
-You should see `["s3-sink"]` in the response.
+You should see `"state": "RUNNING"` for both the connector and its tasks.
 
-### Task 9: Check Connector Status
+### Task 5: Produce Test Messages
 
-View the connector status:
+Produce messages to the orders topic:
 
 ```bash
-curl http://localhost:8083/connectors/s3-sink/status | python3 -m json.tool
+for i in {1..10}; do
+  echo "{\"orderId\": \"order-$i\", \"amount\": $((RANDOM % 100 + 1)), \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
+done | docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
+  --topic orders --bootstrap-server localhost:9092
 ```
 
-Look for:
-- `"state": "RUNNING"`
-- All tasks should be in `"RUNNING"` state
-
-**Note**: If the connector fails with "timezone configuration must be set", ensure the `s3-sink-connector.json` includes `"timezone": "UTC"` in the configuration.
-
-### Task 10: Produce Messages to Orders Topic
-
-Generate order data:
+Produce messages to the events topic:
 
 ```bash
-docker exec -it kafka /opt/kafka/bin/kafka-console-producer.sh \
-  --topic orders \
-  --bootstrap-server localhost:9092 \
-  --property "parse.key=true" \
-  --property "key.separator=:"
+for i in {1..10}; do
+  echo "{\"eventType\": \"click\", \"userId\": \"user-$i\", \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
+done | docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
+  --topic events --bootstrap-server localhost:9092
 ```
 
-Enter these messages (press Ctrl+D when done):
-```
-order-1:{"orderId": "order-1", "customerId": "cust-100", "amount": 99.99, "product": "Laptop", "timestamp": "2024-12-03T10:00:00Z"}
-order-2:{"orderId": "order-2", "customerId": "cust-101", "amount": 149.50, "product": "Mouse", "timestamp": "2024-12-03T10:05:00Z"}
-order-3:{"orderId": "order-3", "customerId": "cust-102", "amount": 299.99, "product": "Keyboard", "timestamp": "2024-12-03T10:10:00Z"}
-order-4:{"orderId": "order-4", "customerId": "cust-100", "amount": 49.99, "product": "USB Cable", "timestamp": "2024-12-03T10:15:00Z"}
-order-5:{"orderId": "order-5", "customerId": "cust-103", "amount": 199.00, "product": "Monitor", "timestamp": "2024-12-03T10:20:00Z"}
-```
+### Task 6: Wait for Backup
 
-### Task 11: Produce Messages to Events Topic
+The connector will flush data when:
+- `flush.size` (5) records are reached, OR
+- `rotate.interval.ms` (60 seconds) has elapsed
 
-Generate event data:
+Wait about 60 seconds for the backup to occur:
 
 ```bash
-docker exec -it kafka /opt/kafka/bin/kafka-console-producer.sh \
-  --topic events \
-  --bootstrap-server localhost:9092
+sleep 65
 ```
 
-Enter:
-```
-{"eventId": "evt-001", "type": "user_login", "userId": "user-100", "timestamp": "2024-12-03T10:00:00Z"}
-{"eventId": "evt-002", "type": "page_view", "userId": "user-101", "page": "/home", "timestamp": "2024-12-03T10:05:00Z"}
-{"eventId": "evt-003", "type": "button_click", "userId": "user-100", "button": "checkout", "timestamp": "2024-12-03T10:10:00Z"}
-{"eventId": "evt-004", "type": "user_logout", "userId": "user-100", "timestamp": "2024-12-03T10:15:00Z"}
-{"eventId": "evt-005", "type": "error", "userId": "user-102", "error": "timeout", "timestamp": "2024-12-03T10:20:00Z"}
-```
+### Task 7: Verify Backup Files in MinIO
 
-Press Ctrl+D to finish.
-
-### Task 12: Wait for File Flush
-
-The connector flushes data to S3 based on:
-- `flush.size` (number of records)
-- `rotate.interval.ms` (time interval)
-
-Wait 60 seconds for the first flush to occur.
-
-Check connector logs:
+List all backed-up files:
 
 ```bash
-docker logs kafka-connect | grep -i "s3\|uploaded\|committed"
+docker exec minio mc ls --recursive minio/kafka-backup/topics/
 ```
 
-Look for messages indicating files were written to S3.
-
-### Task 13: Verify Files in MinIO
-
-Go back to MinIO console (http://localhost:9001) and:
-
-1. Navigate to the `kafka-backup` bucket
-2. Browse to `topics/orders/`
-3. You should see partitioned directories and JSON files
-4. Browse to `topics/events/` as well
-
-The file structure will look like:
+You should see files like:
 ```
-kafka-backup/
-  topics/
-    orders/
-      partition=0/
-        orders+0+0000000000.json
-      partition=1/
-      partition=2/
-    events/
-      partition=0/
-      partition=1/
+topics/orders/partition=0/orders+0+0000000000.json.gz
+topics/events/partition=0/events+0+0000000000.json.gz
 ```
 
-### Task 14: Download and Inspect Backup File
+### Task 8: Inspect a Backup File
 
-Download a file from MinIO:
+Download and view the contents of a backup file:
 
 ```bash
-# Using MinIO client inside container
-docker exec -it minio mc cat minio/kafka-backup/topics/orders/partition=0/orders+0+0000000000.json
+# List files to find the exact filename
+docker exec minio mc ls minio/kafka-backup/topics/orders/partition=0/
+
+# View contents (replace filename as needed)
+docker exec minio mc cat minio/kafka-backup/topics/orders/partition=0/orders+0+0000000000.json.gz | gunzip
 ```
 
-You should see the JSON records that were backed up!
+Each line in the file is a JSON record from your topic.
 
-### Task 15: Produce More Messages
-
-Let's test continuous backup. Produce more messages:
+### Task 9: Check Storage Usage
 
 ```bash
-docker exec -it kafka /opt/kafka/bin/kafka-console-producer.sh \
-  --topic orders \
-  --bootstrap-server localhost:9092 \
-  --property "parse.key=true" \
-  --property "key.separator=:"
+docker exec minio mc du minio/kafka-backup/
 ```
 
-Enter 10 more order messages:
-```
-order-6:{"orderId": "order-6", "customerId": "cust-104", "amount": 89.99, "product": "Headphones", "timestamp": "2024-12-03T10:25:00Z"}
-order-7:{"orderId": "order-7", "customerId": "cust-105", "amount": 129.99, "product": "Webcam", "timestamp": "2024-12-03T10:30:00Z"}
-order-8:{"orderId": "order-8", "customerId": "cust-106", "amount": 79.99, "product": "Mousepad", "timestamp": "2024-12-03T10:35:00Z"}
-order-9:{"orderId": "order-9", "customerId": "cust-107", "amount": 249.99, "product": "SSD", "timestamp": "2024-12-03T10:40:00Z"}
-order-10:{"orderId": "order-10", "customerId": "cust-108", "amount": 349.99, "product": "GPU", "timestamp": "2024-12-03T10:45:00Z"}
-```
+### Task 10: Monitor Connector Status
 
-### Task 16: Verify New Backup Files
-
-Wait another 60 seconds, then check MinIO again.
-
-You should see new files created as the connector flushes additional records.
+Check the connector's consumer lag:
 
 ```bash
-docker exec -it minio mc ls -r minio/kafka-backup/topics/orders/
-```
-
-### Task 17: Monitor Connector Metrics
-
-Check connector offset progress:
-
-```bash
-curl http://localhost:8083/connectors/s3-sink/status | python3 -m json.tool
-```
-
-Check how many records have been processed:
-
-```bash
-docker exec -it kafka /opt/kafka/bin/kafka-consumer-groups.sh \
+docker exec kafka /opt/kafka/bin/kafka-consumer-groups.sh \
   --bootstrap-server localhost:9092 \
   --group connect-s3-sink \
   --describe
 ```
 
-This shows the connector's consumer group offsets.
+Low or zero lag indicates the connector is keeping up with new messages.
 
-### Task 18: View in Kafka UI
+---
 
-Open http://localhost:8080 in your browser.
+## Part 2: Topic Recovery
 
-1. Navigate to "Topics" → "orders"
-2. View the messages
-3. Navigate to "Kafka Connect"
-4. View the S3 sink connector status and configuration
+### Task 11: Simulate Data Loss
 
-### Task 19: Test File Rotation
-
-The connector creates new files based on:
-- Number of records (`flush.size`)
-- Time interval (`rotate.interval.ms`)
-
-Our configuration uses:
-- `flush.size: 5` - New file every 5 records
-- `rotate.interval.ms: 60000` - New file every 60 seconds
-
-Produce exactly 5 more messages to trigger size-based rotation:
+Delete the orders topic:
 
 ```bash
-docker exec -it kafka /opt/kafka/bin/kafka-console-producer.sh \
-  --topic orders \
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --delete --topic orders \
   --bootstrap-server localhost:9092
-```
-
-Enter 5 messages and check MinIO - you should see a new file!
-
-### Task 20: Understand Partitioning Strategies
-
-Our connector uses `DefaultPartitioner` which organizes files by:
-- `topics/<topic-name>/partition=<partition-num>/`
-
-Other partitioners available:
-- **TimeBasedPartitioner**: `topics/<topic>/year=YYYY/month=MM/day=DD/hour=HH/`
-- **FieldPartitioner**: `topics/<topic>/field1=value1/field2=value2/`
-- **DailyPartitioner**: `topics/<topic>/year=YYYY/month=MM/day=DD/`
-
-### Task 21: Test Connector Restart
-
-Delete the connector:
-
-```bash
-curl -X DELETE http://localhost:8083/connectors/s3-sink
 ```
 
 Verify it's gone:
 
 ```bash
-curl http://localhost:8083/connectors
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --list --bootstrap-server localhost:9092
 ```
 
-Recreate it:
+### Task 12: Recreate the Topic
 
 ```bash
-curl -X POST http://localhost:8083/connectors \
-  -H "Content-Type: application/json" \
-  -d @s3-sink-connector.json
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --create --topic orders-restored \
+  --partitions 3 --replication-factor 1 \
+  --bootstrap-server localhost:9092
 ```
 
-The connector will resume from the last committed offset - no data duplication!
+### Task 13: Restore from Backup
 
-### Task 22: Explore Alternative Formats
-
-To use different output formats, modify the connector configuration:
-
-**For Avro format:**
-```json
-{
-  "format.class": "io.confluent.connect.s3.format.avro.AvroFormat",
-  "value.converter": "io.confluent.connect.avro.AvroConverter",
-  "value.converter.schema.registry.url": "http://schema-registry:8081"
-}
-```
-
-**For Parquet format:**
-```json
-{
-  "format.class": "io.confluent.connect.s3.format.parquet.ParquetFormat"
-}
-```
-
-(Note: These require additional setup not included in this exercise)
-
-### Task 23: Check Storage Usage
-
-View total storage used in MinIO:
+First, set up the MinIO alias (if not already done):
 
 ```bash
-docker exec -it minio mc du minio/kafka-backup
+docker exec minio mc alias set minio http://localhost:9000 minioadmin minioadmin
 ```
 
-This shows how much space your Kafka backups are consuming.
-
-### Task 24: Implement Retention Policy
-
-In a production environment, you'd implement S3 lifecycle policies to:
-- Move old files to cheaper storage tiers (e.g., S3 Glacier)
-- Delete files older than a certain age
-- Compress archived data
-
-MinIO supports lifecycle policies similar to AWS S3.
-
-### Task 25: Clean Up
-
-Stop the connector:
+List available backup files:
 
 ```bash
-curl -X DELETE http://localhost:8083/connectors/s3-sink
+docker exec minio mc ls --recursive minio/kafka-backup/topics/orders/
 ```
 
-Stop all services:
+Restore each backup file to Kafka (repeat for each file listed):
 
 ```bash
-docker compose down
+# Example: restore a specific file (adjust the path based on your output)
+docker exec minio mc cat minio/kafka-backup/topics/orders/partition=0/orders+0+0000000000.json.gz | \
+  gunzip | \
+  docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
+    --topic orders-restored --bootstrap-server localhost:9092
 ```
 
-Note: Add `-v` only if you want to delete the backup data in MinIO volumes.
+Or restore all files with a loop:
+
+```bash
+# List all backup files and restore each one
+for file in $(docker exec minio mc ls --recursive minio/kafka-backup/topics/orders/ | awk '{print $NF}'); do
+  echo "Restoring: $file"
+  docker exec minio mc cat "minio/kafka-backup/topics/orders/$file" | gunzip | \
+    docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
+      --topic orders-restored --bootstrap-server localhost:9092
+done
+```
+
+### Task 14: Verify Restoration
+
+Count restored messages:
+
+```bash
+docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
+  --topic orders-restored \
+  --from-beginning \
+  --timeout-ms 5000 \
+  --bootstrap-server localhost:9092 2>/dev/null | wc -l
+```
+
+View restored messages:
+
+```bash
+docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
+  --topic orders-restored \
+  --from-beginning \
+  --max-messages 5 \
+  --bootstrap-server localhost:9092
+```
+
+---
 
 ## Key Concepts
 
-### Kafka Connect Architecture
-
-**Kafka Connect** is a framework for streaming data between Kafka and external systems:
-- **Source Connectors**: Import data into Kafka (e.g., database → Kafka)
-- **Sink Connectors**: Export data from Kafka (e.g., Kafka → S3)
-- **Workers**: Execute connector tasks
-- **Converters**: Transform data format (e.g., JSON, Avro)
-
 ### S3 Sink Connector Behavior
 
-1. **Consumer Group**: Creates a consumer group to read from topics
-2. **Buffering**: Accumulates records in memory
-3. **Flushing**: Writes files to S3 when flush conditions are met
-4. **Offset Commit**: Commits Kafka offsets after successful S3 write
-5. **Exactly-Once**: Ensures no duplicate files (idempotent writes)
+1. **Consumes** messages from Kafka topics
+2. **Buffers** records in memory
+3. **Flushes** to S3 when buffer is full OR time interval reached
+4. **Creates** new file for each flush
 
 ### File Naming Convention
 
-Default naming pattern:
 ```
-<topic>+<partition>+<start-offset>.<extension>
+{topic}+{partition}+{startOffset}.{format}.{compression}
 ```
 
-Example:
-- `orders+0+0000000000.json` - Topic: orders, Partition: 0, Start offset: 0
-- `orders+1+0000000005.json` - Topic: orders, Partition: 1, Start offset: 5
-
-### Use Cases
-
-1. **Long-term Archival**: Retain data beyond Kafka's retention period
-2. **Data Lake Integration**: Feed data into analytics platforms
-3. **Compliance**: Meet regulatory requirements for data retention
-4. **Backup & Recovery**: Disaster recovery and data restoration
-5. **Cost Optimization**: Move cold data to cheaper object storage
-6. **Analytics**: Enable batch processing on historical data
+Example: `orders+0+0000000000.json.gz`
+- Topic: orders
+- Partition: 0
+- Starting offset: 0
+- Format: JSON
+- Compression: gzip
 
 ### Flush Strategies
 
-**Size-based flushing:**
-- `flush.size`: Write file after N records
-- Good for: Predictable file sizes
+| Strategy | Setting | Use Case |
+|----------|---------|----------|
+| Record count | `flush.size=1000` | High-volume topics |
+| Time-based | `rotate.interval.ms=60000` | Consistent backup intervals |
+| Scheduled | `rotate.schedule.interval.ms=3600000` | Hourly backups |
 
-**Time-based flushing:**
-- `rotate.interval.ms`: Write file every N milliseconds
-- Good for: Low-throughput topics, time-based partitioning
+### Output Formats
 
-**Schedule-based flushing:**
-- `rotate.schedule.interval.ms`: Write at specific intervals
-- Good for: Daily/hourly snapshots
+| Format | Class | Use Case |
+|--------|-------|----------|
+| JSON | `io.confluent.connect.s3.format.json.JsonFormat` | Human-readable, debugging |
+| Avro | `io.confluent.connect.s3.format.avro.AvroFormat` | Schema evolution, compact |
+| Parquet | `io.confluent.connect.s3.format.parquet.ParquetFormat` | Analytics, columnar |
+
+---
 
 ## Troubleshooting
 
-**Connector fails to start:**
+### Connector Not Starting
+
 ```bash
-# Check Kafka Connect logs
-docker logs kafka-connect
+# Check logs
+docker logs kafka-connect | tail -50
 
-# Verify S3 credentials
-docker exec kafka-connect env | grep AWS
+# Verify connector was deployed
+curl http://localhost:8083/connectors
 
-# Test MinIO connectivity
-docker exec kafka-connect curl http://minio:9000
+# Check for errors
+curl http://localhost:8083/connectors/s3-sink/status | jq .
 ```
 
-**No files appearing in S3:**
+### No Backup Files Appearing
+
+1. Check if enough messages were produced (need `flush.size` records)
+2. Wait for `rotate.interval.ms` to elapse (60 seconds)
+3. Check connector status for errors
+4. Verify MinIO connectivity
+
 ```bash
-# Check connector status
-curl http://localhost:8083/connectors/s3-sink/status
-
-# Verify flush conditions are met
-# (enough records or time has passed)
-
-# Check connector tasks
-curl http://localhost:8083/connectors/s3-sink/tasks
-
-# View connector logs
-docker logs kafka-connect | grep s3-sink
+# Test MinIO from Kafka Connect
+docker exec kafka-connect curl -s http://minio:9000
 ```
 
-**Permission errors:**
-- Verify MinIO credentials in connector config
-- Check bucket exists and is accessible
-- Ensure correct IAM permissions (for real AWS S3)
+### Connector Shows FAILED State
 
-**Performance issues:**
 ```bash
-# Increase tasks.max for parallelism
-# Adjust flush.size and rotate.interval.ms
-# Enable compression to reduce storage
-# Monitor connector lag
+# Get detailed error
+curl http://localhost:8083/connectors/s3-sink/status | jq '.tasks[0].trace'
+
+# Restart the connector
+curl -X POST http://localhost:8083/connectors/s3-sink/restart
 ```
 
-## Best Practices
-
-1. **Choose appropriate flush size**: Balance file size vs. latency
-2. **Use compression**: Reduce storage costs (gzip, snappy)
-3. **Implement partitioning**: Organize data for efficient querying
-4. **Monitor connector lag**: Set up alerts for processing delays
-5. **Use Avro/Parquet**: Better compression and schema evolution
-6. **Set up lifecycle policies**: Automate data retention and archival
-7. **Secure credentials**: Use IAM roles, not hardcoded keys
-8. **Test restore procedures**: Regularly verify backups are usable
-9. **Plan for schema evolution**: Handle schema changes gracefully
-10. **Monitor storage costs**: Track S3 usage and optimize
+---
 
 ## Advanced Configuration
 
 ### Time-Based Partitioning
+
+Organize files by date/hour:
 
 ```json
 {
   "partitioner.class": "io.confluent.connect.storage.partitioner.TimeBasedPartitioner",
   "path.format": "'year'=YYYY/'month'=MM/'day'=dd/'hour'=HH",
   "partition.duration.ms": "3600000",
-  "timestamp.extractor": "Record"
+  "timestamp.extractor": "RecordField",
+  "timestamp.field": "timestamp"
 }
 ```
 
-This creates files organized by time:
-```
-topics/orders/year=2024/month=12/day=03/hour=10/orders+0+0000000000.json
-```
-
-### Compression
-
-```json
-{
-  "s3.compression.type": "gzip"
-}
-```
-
-Supported: `none`, `gzip`, `snappy`, `zstd`
-
-### Custom File Naming
-
-```json
-{
-  "topics.dir": "kafka-data",
-  "directory.delim": "/",
-  "file.delim": "-"
-}
-```
+Result: `topics/orders/year=2024/month=01/day=15/hour=10/...`
 
 ### Performance Tuning
 
 ```json
 {
   "tasks.max": "4",
-  "s3.part.size": "5242880",
-  "s3.wan.mode": "true",
-  "behavior.on.null.values": "ignore"
+  "s3.part.size": "26214400",
+  "flush.size": "10000"
 }
 ```
 
-## Additional Exercises
+---
 
-1. **Parquet Format**: Configure connector to use Parquet for better compression
-2. **Schema Registry**: Integrate with Schema Registry for Avro support
-3. **Time Partitioning**: Use TimeBasedPartitioner for daily folders
-4. **Multi-Topic Connector**: Create separate connectors for different topics
-5. **Data Restoration**: Write a script to restore Kafka topic from S3 backups
-6. **Monitoring Dashboard**: Set up Prometheus/Grafana for connector metrics
-7. **Lifecycle Policies**: Configure MinIO retention policies
-8. **Incremental Backups**: Implement incremental backup strategy
+## Cleanup
 
-## Data Restoration
+Stop all services:
 
-To restore data from S3 back to Kafka, you can:
-
-1. **Use Kafka Connect S3 Source Connector** (reads from S3 to Kafka)
-2. **Write a custom consumer** that reads JSON files and produces to Kafka
-3. **Use command-line tools** to replay data
-
-Example restoration script concept:
 ```bash
-# Download backup files
-aws s3 cp s3://kafka-backup/topics/orders/ ./restore/ --recursive
-
-# Replay to Kafka
-cat restore/orders+0+*.json | \
-  docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
-    --topic orders-restored \
-    --bootstrap-server localhost:9092
+docker compose down -v
 ```
 
-## Resources
+---
 
-- [Confluent S3 Sink Connector Documentation](https://docs.confluent.io/kafka-connectors/s3-sink/current/)
-- [Kafka Connect Documentation](https://kafka.apache.org/documentation/#connect)
+## Best Practices
+
+1. **Set appropriate flush.size**: Balance between file count and recovery granularity
+2. **Use compression**: Reduces storage costs significantly
+3. **Monitor connector lag**: Alert if lag grows continuously
+4. **Test recovery regularly**: Verify backups are actually restorable
+5. **Use time-based partitioning**: Easier to find and restore specific time ranges
+6. **Enable error logging**: Set `errors.log.enable=true` for debugging
+
+---
+
+## Additional Resources
+
+- [S3 Sink Connector Documentation](https://docs.confluent.io/kafka-connectors/s3-sink/current/)
+- [Kafka Connect REST API](https://docs.confluent.io/platform/current/connect/references/restapi.html)
 - [MinIO Documentation](https://min.io/docs/minio/linux/index.html)
-- [AWS S3 Best Practices](https://docs.aws.amazon.com/AmazonS3/latest/userguide/best-practices.html)
-- [Data Partitioning Strategies](https://docs.confluent.io/kafka-connectors/s3-sink/current/overview.html#partitioners)

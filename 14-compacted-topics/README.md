@@ -296,7 +296,7 @@ Keep it running for the next tasks.
 In a new terminal, update a user profile:
 
 ```bash
-echo "user-1:{\"userId\": \"user-1\", \"name\": \"Alice Johnson\", \"email\": \"alice.j@example.com\", \"age\": 28, \"version\": 4}" | \
+echo 'user-1:{"userId": "user-1", "name": "Alice Johnson", "email": "alice.j@example.com", "age": 28, "version": 4}' | \
 docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
   --topic user-profiles \
   --bootstrap-server localhost:9092 \

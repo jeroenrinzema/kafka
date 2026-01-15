@@ -322,7 +322,9 @@ The UI is configured to show both clusters:
    - Check partition distribution
    - View replication lag (should be minimal)
 
-### Task 15: Test Consumer Group Synchronization
+### Task 15: Understanding Consumer Group Offset Synchronization
+
+> **Important**: MirrorMaker 2 does **not** automatically create consumer groups on the destination cluster. Instead, it creates **checkpoint records** that store the offset translation mapping. This allows consumers to manually find their correct starting position after a failover.
 
 Create a consumer group on the source cluster:
 
@@ -337,30 +339,50 @@ docker exec -it kafka-source /opt/kafka/bin/kafka-console-consumer.sh \
 
 This consumes 3 messages and commits the offset.
 
-Wait 15-20 seconds for consumer group sync.
+Wait 60-90 seconds for checkpoint sync (configured by `sync.group.offsets.interval.seconds`).
 
-Check if the consumer group was mirrored:
+### Task 16: View Checkpoint Data
+
+MirrorMaker 2 stores offset translation data in the `source.checkpoints.internal` topic on the destination cluster. Check if checkpoints are being written:
 
 ```bash
-docker exec -it kafka-destination /opt/kafka/bin/kafka-consumer-groups.sh \
+docker exec -it kafka-destination /opt/kafka/bin/kafka-console-consumer.sh \
+  --topic source.checkpoints.internal \
   --bootstrap-server localhost:9093 \
-  --list
+  --from-beginning \
+  --max-messages 5 2>/dev/null || echo "Checkpoints topic may not exist yet - wait longer for sync"
 ```
 
-You should see `source.order-processors` - the mirrored consumer group!
+If checkpoints exist, you'll see JSON records mapping source offsets to destination offsets.
 
-### Task 16: View Consumer Group Details
+### Task 16b: Manual Consumer Group Offset Sync (Disaster Recovery)
 
-Check the translated offsets:
+During a failover, you need to manually set consumer group offsets on the destination cluster. MirrorMaker 2 provides checkpoint data, but you must apply it:
 
 ```bash
-docker exec -it kafka-destination /opt/kafka/bin/kafka-consumer-groups.sh \
-  --bootstrap-server localhost:9093 \
-  --group source.order-processors \
+# First, check the source consumer group's current offsets
+docker exec -it kafka-source /opt/kafka/bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --group order-processors \
   --describe
 ```
 
-The offsets are translated to match the destination cluster's topic!
+Note the current offset for each partition. On the destination cluster, the offsets should be similar (MirrorMaker 2 maintains offset parity when possible).
+
+To manually set offsets on the destination for a new consumer group:
+
+```bash
+# Reset to the beginning (for testing) or use --to-offset for specific offset
+docker exec -it kafka-destination /opt/kafka/bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9093 \
+  --group order-processors-dr \
+  --topic source.orders \
+  --reset-offsets \
+  --to-earliest \
+  --execute
+```
+
+> **Note**: In production, you would use the checkpoint data from `source.checkpoints.internal` to calculate the correct translated offset for each partition.
 
 ### Task 17: Simulate Disaster Recovery
 

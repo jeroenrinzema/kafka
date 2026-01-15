@@ -44,7 +44,7 @@ func main() {
 	}
 
 	// Read schema
-	schemaBytes, err := os.ReadFile("../schemas/user.avsc")
+	schemaBytes, err := os.ReadFile("../../schemas/user.avsc")
 	if err != nil {
 		log.Fatalf("Failed to read schema file: %v", err)
 	}

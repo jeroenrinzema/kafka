@@ -26,13 +26,13 @@ This setup includes:
 Start all services:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Verify all services are running:
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ## Accessing the Services
@@ -102,19 +102,19 @@ To see metrics in action, generate some Kafka traffic:
 
 ```bash
 # Create a topic
-docker exec -it kafka kafka-topics --create \
+docker exec -it kafka /opt/kafka/bin/kafka-topics.sh --create \
   --topic test-metrics \
   --bootstrap-server localhost:9092 \
   --partitions 3 \
   --replication-factor 1
 
 # Start a console producer
-docker exec -it kafka kafka-console-producer \
+docker exec -it kafka /opt/kafka/bin/kafka-console-producer.sh \
   --topic test-metrics \
   --bootstrap-server localhost:9092
 
 # In another terminal, start a console consumer
-docker exec -it kafka kafka-console-consumer \
+docker exec -it kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --topic test-metrics \
   --bootstrap-server localhost:9092 \
   --from-beginning
@@ -155,7 +155,7 @@ histogram_quantile(0.99,
 Stop and remove all containers:
 
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ## Next Steps

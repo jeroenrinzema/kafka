@@ -10,6 +10,19 @@
     {
       "name": "username",
       "type": "string"
+    },
+    {
+      "name": "email",
+      "type": "string"
+    },
+    {
+      "name": "created_at",
+      "type": "long",
+      "default": 0
+    },
+    {
+      "name": "last_login",
+      "type": "long"
     }
   ]
 }

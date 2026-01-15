@@ -54,6 +54,22 @@ Start with exercise 01 and progress sequentially.
 ### Part 6: Security
 
 18. **[18-access-control-lists](./18-access-control-lists/)** - Securing Kafka with SASL authentication and ACL authorization
+22. **[22-ssl-encryption](./22-ssl-encryption/)** - Encrypting Kafka communication with SSL/TLS and mutual TLS (mTLS)
+
+### Part 7: Debugging and Performance
+
+19. **[19-ksqldb-basics](./19-ksqldb-basics/)** - Stream processing with ksqlDB
+20. **[20-debugging-challenge](./20-debugging-challenge/)** - Troubleshooting common Kafka issues
+21. **[21-message-bottleneck](./21-message-bottleneck/)** - Identifying and resolving performance bottlenecks
+
+### Part 8: Cluster Administration
+
+23. **[23-partition-reassignment](./23-partition-reassignment/)** - Moving partitions between brokers, scaling clusters, and decommissioning nodes
+24. **[24-client-quotas](./24-client-quotas/)** - Rate limiting producers and consumers with quotas and throttling
+25. **[25-log-segment-inspection](./25-log-segment-inspection/)** - Forensic analysis of Kafka log segments and index files
+26. **[26-partition-scaling](./26-partition-scaling/)** - Reducing partition counts using the Create-Migrate-Delete pattern
+27. **[27-broker-maintenance](./27-broker-maintenance/)** - Zero-downtime broker restarts with graceful leadership migration
+28. **[28-dynamic-broker-config](./28-dynamic-broker-config/)** - Hot-reloading broker configurations without restarts
 
 ## Learning Path
 

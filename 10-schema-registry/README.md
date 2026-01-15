@@ -40,7 +40,7 @@ Wait a few seconds for services to be ready. Verify Schema Registry is running:
 curl http://localhost:8081/
 ```
 
-You should see: `[]`
+You should see: `{}`
 
 ### Task 2: Register Your First Schema
 
@@ -158,29 +158,6 @@ curl -X POST http://localhost:8081/compatibility/subjects/users-value/versions/l
 
 This protects you from breaking existing consumers!
 
-### Task 7: Try an Incompatible Schema
-
-### Task 7: Try an Incompatible Schema
-
-Try to register a schema that removes a required field (breaking change). View `schemas/user-incompatible.avsc` which removes the `email` field:
-
-```bash
-cat schemas/user-incompatible.avsc
-```
-
-Test this incompatible schema:
-
-```bash
-SCHEMA=$(cat schemas/user-incompatible.avsc | jq -c . | jq -R .)
-curl -X POST http://localhost:8081/compatibility/subjects/users-value/versions/latest \
-  -H "Content-Type: application/vnd.schemaregistry.v1+json" \
-  -d "{\"schema\": $SCHEMA}"
-```
-
-**Expected Output**: `{"is_compatible":false}`
-
-This protects you from breaking existing consumers!
-
 ### Task 8: View Compatibility Mode
 
 Check the current compatibility mode:
@@ -209,6 +186,7 @@ Open http://localhost:8080 in your browser.
 
 ### Task 13: Produce Messages with Schema (Optional)
 
+# TODO: fix task
 If you have `kaf` installed with Avro support, you can produce messages:
 
 ```bash
