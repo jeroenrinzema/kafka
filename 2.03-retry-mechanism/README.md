@@ -207,4 +207,4 @@ docker compose down
 
 ## Next Steps
 
-Continue to [Exercise 09: Kaf Introduction](../09-kaf-introduction/) to learn about a modern CLI tool for Kafka.
+Continue to [Exercise 3.01: Schema Registry](../3.01-schema-registry/) to learn about managing schemas with Confluent Schema Registry.

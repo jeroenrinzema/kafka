@@ -321,4 +321,4 @@ docker compose down
 
 ## Next Steps
 
-Continue to [Exercise 06: Offset Management](../06-offset-management/)
+Continue to [Exercise 1.06: Offset Management](../1.06-offset-management/)

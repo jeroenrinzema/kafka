@@ -15,73 +15,130 @@ Each exercise is contained in its own folder and includes:
 - Docker Compose configuration to run Kafka
 - Sample data or scripts where applicable
 
-Start with exercise 01 and progress sequentially.
+Start with exercise 1.01 and progress sequentially through each part.
 
 ## Training Structure
 
-### Part 1: Kafka Fundamentals (Using Official Kafka Binaries)
+### Part 1: Kafka Fundamentals
 
-1. **[01-single-broker](./01-single-broker/)** - Setting up a single Kafka broker
-2. **[02-topic-creation](./02-topic-creation/)** - Creating and describing topics
-3. **[03-producer-basics](./03-producer-basics/)** - Producing messages to Kafka
-4. **[04-consumer-basics](./04-consumer-basics/)** - Consuming messages from Kafka
-5. **[05-topic-partitions](./05-topic-partitions/)** - Understanding and working with partitions
-6. **[06-offset-management](./06-offset-management/)** - Consuming from specific offsets and timestamps
+Core concepts and basic operations with Apache Kafka.
 
-### Part 2: Advanced Operations (Using Kaf CLI)
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [1.01-single-broker](./1.01-single-broker/) | Single Broker Setup | Setting up a single Kafka broker in KRaft mode |
+| [1.02-topic-creation](./1.02-topic-creation/) | Topic Creation | Creating and describing topics |
+| [1.03-producer-basics](./1.03-producer-basics/) | Producer Basics | Producing messages to Kafka |
+| [1.04-consumer-basics](./1.04-consumer-basics/) | Consumer Basics | Consuming messages from Kafka |
+| [1.05-topic-partitions](./1.05-topic-partitions/) | Topic Partitions | Understanding and working with partitions |
+| [1.06-offset-management](./1.06-offset-management/) | Offset Management | Consuming from specific offsets and timestamps |
 
-7. **[07-batching-and-commits](./07-batching-and-commits/)** - Understanding auto-commit and manual offset management
-8. **[08-retry-mechanism](./08-retry-mechanism/)** - Error handling and retry strategies with Dead Letter Queues
-9. **[09-kaf-introduction](./09-kaf-introduction/)** - Introduction to Kaf CLI tool
+### Part 2: CLI Tools & Consumer Patterns
+
+Advanced consumer patterns and introduction to the Kaf CLI tool.
+
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [2.01-kaf-introduction](./2.01-kaf-introduction/) | Kaf CLI Introduction | Introduction to the Kaf CLI tool |
+| [2.02-batching-and-commits](./2.02-batching-and-commits/) | Batching & Commits | Understanding auto-commit and manual offset management |
+| [2.03-retry-mechanism](./2.03-retry-mechanism/) | Retry Mechanism | Error handling and retry strategies with Dead Letter Queues |
 
 ### Part 3: Schema Management
 
-10. **[10-schema-registry](./10-schema-registry/)** - Managing schemas with Confluent Schema Registry
-11. **[11-schema-registry-client](./11-schema-registry-client/)** - Producing and consuming with Schema Registry in Go
+Managing message schemas with Confluent Schema Registry.
 
-### Part 4: Replication and Disaster Recovery
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [3.01-schema-registry](./3.01-schema-registry/) | Schema Registry | Managing schemas with Confluent Schema Registry |
+| [3.02-schema-registry-client](./3.02-schema-registry-client/) | Schema Registry Client | Producing and consuming with Schema Registry in Go |
 
-12. **[12-mirrormaker-backup](./12-mirrormaker-backup/)** - Topic backup and cross-cluster replication with MirrorMaker 2
-13. **[13-s3-backup](./13-s3-backup/)** - Long-term topic archival to S3-compatible storage with Kafka Connect
+### Part 4: Event Design & Stream Processing
 
-### Part 5: Advanced Topics
+Event modeling patterns and stream processing with ksqlDB.
 
-14. **[14-compacted-topics](./14-compacted-topics/)** - Using log compaction for state stores and change data capture
-15. **[15-event-design](./15-event-design/)** - Event modeling best practices and schema design patterns
-16. **[16-grafana-monitoring](./16-grafana-monitoring/)** - Monitoring Kafka with Prometheus and Grafana
-17. **[17-chaos-broker-failure](./17-chaos-broker-failure/)** - Chaos engineering: testing broker failures and cluster resilience
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [4.01-event-design](./4.01-event-design/) | Event Design | Event modeling best practices and schema design patterns |
+| [4.02-compacted-topics](./4.02-compacted-topics/) | Compacted Topics | Using log compaction for state stores and change data capture |
+| [4.03-ksqldb-basics](./4.03-ksqldb-basics/) | ksqlDB Basics | Stream processing with ksqlDB |
 
-### Part 6: Security
+### Part 5: Security
 
-18. **[18-access-control-lists](./18-access-control-lists/)** - Securing Kafka with SASL authentication and ACL authorization
-22. **[22-ssl-encryption](./22-ssl-encryption/)** - Encrypting Kafka communication with SSL/TLS and mutual TLS (mTLS)
+Securing Kafka with authentication, authorization, and encryption.
 
-### Part 7: Debugging and Performance
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [5.01-access-control-lists](./5.01-access-control-lists/) | Access Control Lists | Securing Kafka with SASL authentication and ACL authorization |
+| [5.02-ssl-encryption](./5.02-ssl-encryption/) | SSL/TLS Encryption | Encrypting Kafka communication with SSL/TLS and mutual TLS (mTLS) |
 
-19. **[19-ksqldb-basics](./19-ksqldb-basics/)** - Stream processing with ksqlDB
-20. **[20-debugging-challenge](./20-debugging-challenge/)** - Troubleshooting common Kafka issues
-21. **[21-message-bottleneck](./21-message-bottleneck/)** - Identifying and resolving performance bottlenecks
+### Part 6: Monitoring & Observability
 
-### Part 8: Cluster Administration
+Setting up monitoring and observability for Kafka clusters.
 
-23. **[23-partition-reassignment](./23-partition-reassignment/)** - Moving partitions between brokers, scaling clusters, and decommissioning nodes
-24. **[24-client-quotas](./24-client-quotas/)** - Rate limiting producers and consumers with quotas and throttling
-25. **[25-log-segment-inspection](./25-log-segment-inspection/)** - Forensic analysis of Kafka log segments and index files
-26. **[26-partition-scaling](./26-partition-scaling/)** - Reducing partition counts using the Create-Migrate-Delete pattern
-27. **[27-broker-maintenance](./27-broker-maintenance/)** - Zero-downtime broker restarts with graceful leadership migration
-28. **[28-dynamic-broker-config](./28-dynamic-broker-config/)** - Hot-reloading broker configurations without restarts
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [6.01-grafana-monitoring](./6.01-grafana-monitoring/) | Grafana Monitoring | Monitoring Kafka with Prometheus and Grafana |
+
+### Part 7: Cluster Administration
+
+Essential skills for managing and operating Kafka clusters.
+
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [7.01-partition-reassignment](./7.01-partition-reassignment/) | Partition Reassignment | Moving partitions between brokers, scaling clusters, and decommissioning nodes |
+| [7.02-client-quotas](./7.02-client-quotas/) | Client Quotas | Rate limiting producers and consumers with quotas and throttling |
+| [7.03-log-segment-inspection](./7.03-log-segment-inspection/) | Log Segment Inspection | Forensic analysis of Kafka log segments and index files |
+| [7.04-partition-scaling](./7.04-partition-scaling/) | Partition Scaling | Reducing partition counts using the Create-Migrate-Delete pattern |
+| [7.05-broker-maintenance](./7.05-broker-maintenance/) | Broker Maintenance | Zero-downtime broker restarts with graceful leadership migration |
+| [7.06-dynamic-broker-config](./7.06-dynamic-broker-config/) | Dynamic Broker Config | Hot-reloading broker configurations without restarts |
+
+### Part 8: Disaster Recovery
+
+Backup strategies and cross-cluster replication.
+
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [8.01-mirrormaker-backup](./8.01-mirrormaker-backup/) | MirrorMaker Backup | Topic backup and cross-cluster replication with MirrorMaker 2 |
+| [8.02-s3-backup](./8.02-s3-backup/) | S3 Backup | Long-term topic archival to S3-compatible storage with Kafka Connect |
+
+### Part 9: Resilience Testing
+
+Chaos engineering and failure testing for Kafka clusters.
+
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [9.01-chaos-broker-failure](./9.01-chaos-broker-failure/) | Chaos Engineering | Testing broker failures and cluster resilience |
+
+### Part 10: Troubleshooting (Capstone)
+
+Apply everything you've learned to debug and optimize Kafka systems.
+
+| Exercise | Topic | Description |
+|----------|-------|-------------|
+| [10.01-debugging-challenge](./10.01-debugging-challenge/) | Debugging Challenge | Troubleshooting common Kafka issues |
+| [10.02-message-bottleneck](./10.02-message-bottleneck/) | Message Bottleneck | Identifying and resolving performance bottlenecks |
 
 ## Learning Path
 
-Follow the exercises in order. Each exercise builds on concepts from previous ones.
+Follow the exercises in order. Each part builds on concepts from previous parts:
+
+1. **Part 1-2**: Foundation — Learn core Kafka concepts and CLI tools
+2. **Part 3-4**: Application Development — Schema management and event design
+3. **Part 5-6**: Production Readiness — Security and monitoring
+4. **Part 7**: Operations — Cluster administration skills
+5. **Part 8-9**: Reliability — Disaster recovery and resilience testing
+6. **Part 10**: Mastery — Apply all skills to real-world debugging scenarios
 
 ## Tools Used
 
-- **Exercises 1-6**: Official Apache Kafka binaries (kafka-topics, kafka-console-producer, kafka-console-consumer)
-- **Exercises 7-9**: [Kaf](https://github.com/birdayz/kaf) - A modern CLI for Apache Kafka
-- **Exercise 10**: [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/) - Schema management and validation
+- **Part 1**: Official Apache Kafka binaries (kafka-topics, kafka-console-producer, kafka-console-consumer)
+- **Part 2**: [Kaf](https://github.com/birdayz/kaf) - A modern CLI for Apache Kafka
+- **Part 3**: [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/) - Schema management and validation
+- **Part 4**: [ksqlDB](https://ksqldb.io/) - Streaming SQL engine for Kafka
+- **Part 6**: [Prometheus](https://prometheus.io/) & [Grafana](https://grafana.com/) - Monitoring stack
 
 ## Additional Resources
 
 - [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
 - [Kaf CLI Documentation](https://github.com/birdayz/kaf)
+- [Confluent Documentation](https://docs.confluent.io/)
+- [ksqlDB Documentation](https://docs.ksqldb.io/)

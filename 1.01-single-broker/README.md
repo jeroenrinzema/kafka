@@ -78,4 +78,4 @@ docker compose -f 01-single-broker.yaml down -v
 
 ## Next Steps
 
-Continue to [Exercise 02: Topic Creation](../02-topic-creation/)
+Continue to [Exercise 1.02: Topic Creation](../1.02-topic-creation/)

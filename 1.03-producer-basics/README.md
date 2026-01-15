@@ -162,4 +162,4 @@ docker compose down
 
 ## Next Steps
 
-Continue to [Exercise 04: Consumer Basics](../04-consumer-basics/)
+Continue to [Exercise 1.04: Consumer Basics](../1.04-consumer-basics/)

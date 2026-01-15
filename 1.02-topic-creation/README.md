@@ -133,4 +133,4 @@ docker compose down
 
 ## Next Steps
 
-Continue to [Exercise 03: Producer Basics](../03-producer-basics/)
+Continue to [Exercise 1.03: Producer Basics](../1.03-producer-basics/)

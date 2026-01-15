@@ -124,4 +124,4 @@ docker compose down
 
 ## Next Steps
 
-Continue to [Exercise 08: Retry Mechanism](../08-retry-mechanism/) to learn about error handling and retry strategies with Dead Letter Queues.
+Continue to [Exercise 2.03: Retry Mechanism](../2.03-retry-mechanism/) to learn about error handling and retry strategies with Dead Letter Queues.

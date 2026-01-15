@@ -235,4 +235,4 @@ docker compose down
 
 ## Next Steps
 
-Continue to [Exercise 05: Topic Partitions](../05-topic-partitions/)
+Continue to [Exercise 1.05: Topic Partitions](../1.05-topic-partitions/)

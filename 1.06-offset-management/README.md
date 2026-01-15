@@ -425,4 +425,4 @@ docker compose down
 
 ## Next Steps
 
-You've completed the fundamentals! Continue to [Exercise 07: Batching and Commits](../07-batching-and-commits/) to learn about offset commit strategies and their implications.
+You've completed the fundamentals! Continue to [Exercise 2.01: Kaf Introduction](../2.01-kaf-introduction/) to learn about a modern CLI tool for Kafka.

@@ -309,4 +309,4 @@ docker compose down
 
 ## Next Steps
 
-Continue to [Exercise 09: Consumer Groups](../09-consumer-groups/) to dive deeper into consumer group management with Kaf.
+Continue to [Exercise 2.02: Batching and Commits](../2.02-batching-and-commits/) to learn about offset commit strategies and their implications.
