@@ -1,4 +1,4 @@
-# Exercise 14: Compacted Topics as State Store
+# Exercise 4.02: Compacted Topics as State Store
 
 ## Learning Objectives
 
@@ -20,7 +20,7 @@ In this exercise, you'll create:
 
 ## Prerequisites
 
-- Completed exercises 1-13
+- Completed exercises 1.01-4.01 (Kafka fundamentals through Event Design)
 - Docker and Docker Compose installed
 - Basic understanding of Kafka topics and consumers
 - Go 1.21 or later installed (for sample applications)

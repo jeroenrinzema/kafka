@@ -1,4 +1,4 @@
-# Exercise 08: Retry Mechanisms
+# Exercise 2.03: Retry Mechanisms
 
 ## Learning Objectives
 

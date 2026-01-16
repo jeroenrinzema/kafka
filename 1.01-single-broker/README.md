@@ -1,4 +1,4 @@
-# Exercise 01: Single Broker Setup
+# Exercise 1.01: Single Broker Setup
 
 ## Learning Objectives
 

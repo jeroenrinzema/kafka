@@ -1,4 +1,4 @@
-# Exercise 07: Kaf CLI Introduction
+# Exercise 2.01: Kaf CLI Introduction
 
 ## Learning Objectives
 

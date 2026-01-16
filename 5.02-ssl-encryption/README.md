@@ -1,4 +1,4 @@
-# Exercise 22: SSL/TLS Encryption
+# Exercise 5.02: SSL/TLS Encryption
 
 > **Note**: This exercise uses the Confluent Kafka image (`confluentinc/cp-kafka`) which has robust SSL support out of the box.
 

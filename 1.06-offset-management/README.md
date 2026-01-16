@@ -1,4 +1,4 @@
-# Exercise 06: Offset Management
+# Exercise 1.06: Offset Management
 
 ## Learning Objectives
 
@@ -425,4 +425,4 @@ docker compose down
 
 ## Next Steps
 
-You've completed the fundamentals! Continue to [Exercise 2.01: Kaf Introduction](../2.01-kaf-introduction/) to learn about a modern CLI tool for Kafka.
+Continue to [Exercise 1.07: Multi-Broker Cluster](../1.07-multi-broker-cluster/) to learn how to build a multi-broker Kafka cluster step by step.

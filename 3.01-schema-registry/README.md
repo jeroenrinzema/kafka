@@ -1,4 +1,4 @@
-# Exercise 10: Schema Registry
+# Exercise 3.01: Schema Registry
 
 ## Learning Objectives
 
@@ -19,7 +19,7 @@ Schema Registry is a centralized repository for managing and validating schemas 
 
 ## Prerequisites
 
-- Completed exercises 1-9
+- Completed exercises 1.01-2.03 (Kafka fundamentals)
 - Docker and Docker Compose installed
 - `curl` or similar HTTP client
 - Optional: `jq` for JSON formatting

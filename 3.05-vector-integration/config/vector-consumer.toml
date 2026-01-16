@@ -1,0 +1,55 @@
+# Vector Consumer Configuration
+# Reads logs from Kafka and outputs to console (for demonstration)
+
+# ============================================================================
+# DATA DIRECTORY
+# ============================================================================
+data_dir = "/var/lib/vector"
+
+# ============================================================================
+# SOURCES
+# ============================================================================
+
+# Read from Kafka topic
+[sources.kafka_source]
+type = "kafka"
+bootstrap_servers = "kafka:9092"
+group_id = "vector-consumer-group"
+topics = ["application-logs"]
+auto_offset_reset = "earliest"
+
+# Decoding
+decoding.codec = "json"
+
+# ============================================================================
+# TRANSFORMS
+# ============================================================================
+
+# Add consumer metadata
+[transforms.add_metadata]
+type = "remap"
+inputs = ["kafka_source"]
+source = '''
+  .consumed_at = now()
+  .consumer = "vector-consumer"
+  .kafka_topic = .topic
+  .kafka_partition = .partition
+  .kafka_offset = .offset
+
+  # Clean up Kafka metadata fields
+  del(.topic)
+  del(.partition)
+  del(.offset)
+  del(.source_type)
+'''
+
+# ============================================================================
+# SINKS
+# ============================================================================
+
+# Output to console for demonstration
+[sinks.console]
+type = "console"
+inputs = ["add_metadata"]
+encoding.codec = "json"
+encoding.json.pretty = true

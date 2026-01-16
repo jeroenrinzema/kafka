@@ -1,4 +1,4 @@
-# Exercise 02: Topic Creation
+# Exercise 1.02: Topic Creation
 
 ## Learning Objectives
 

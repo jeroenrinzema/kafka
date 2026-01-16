@@ -1,4 +1,4 @@
-# Exercise 28: Dynamic Broker Configuration
+# Exercise 7.06: Dynamic Broker Configuration
 
 ## Learning Objectives
 
@@ -79,7 +79,7 @@ Not all configs are dynamically updatable. Kafka classifies configs as:
 
 ## Prerequisites
 
-- Completed exercises 1-5 (Kafka fundamentals)
+- Completed exercises 1.01-1.06 (Kafka fundamentals)
 - Docker and Docker Compose installed
 
 ## Setup

@@ -654,4 +654,4 @@ docker compose down -v
 
 ## Next Steps
 
-Continue to [Exercise 4.01: Event Design](../4.01-event-design/) to learn about event modeling best practices and schema design patterns.
+Continue to [Exercise 3.05: Vector Integration](../3.05-vector-integration/) to learn how to collect logs with Vector and send them to Kafka.

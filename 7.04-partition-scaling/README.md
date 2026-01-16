@@ -1,4 +1,4 @@
-# Exercise 26: Partition Scaling
+# Exercise 7.04: Partition Scaling
 
 ## Learning Objectives
 
@@ -46,7 +46,7 @@ To effectively "reduce" partitions:
 ## Prerequisites
 
 - Docker and Docker Compose installed
-- Completed exercises 1-5 (Kafka fundamentals)
+- Completed exercises 1.01-1.06 (Kafka fundamentals)
 
 ## Setup
 

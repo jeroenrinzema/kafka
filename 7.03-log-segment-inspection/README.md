@@ -1,4 +1,4 @@
-# Exercise 25: Log Segment Inspection & Forensics
+# Exercise 7.03: Log Segment Inspection & Forensics
 
 ## Learning Objectives
 
@@ -68,8 +68,8 @@ Understanding how Kafka stores data on disk is essential for:
 
 ## Prerequisites
 
-- Completed exercises 1-6 (Kafka fundamentals)
-- Completed exercise 14 (Compacted topics) - recommended
+- Completed exercises 1.01-1.06 (Kafka fundamentals)
+- Completed exercise 4.02 (Compacted topics) - recommended
 - Docker and Docker Compose installed
 
 ## Setup

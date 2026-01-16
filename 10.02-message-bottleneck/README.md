@@ -1,4 +1,4 @@
-# Exercise 21: Message Bottleneck Challenge
+# Exercise 10.02: Message Bottleneck Challenge
 
 ## Learning Objectives
 

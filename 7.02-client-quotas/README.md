@@ -1,4 +1,4 @@
-# Exercise 24: Client Quotas & Throttling
+# Exercise 7.02: Client Quotas & Throttling
 
 ## Learning Objectives
 
@@ -85,7 +85,7 @@ Quotas can be applied at different levels (most specific wins):
 
 ## Prerequisites
 
-- Completed exercises 1-6 (Kafka fundamentals)
+- Completed exercises 1.01-1.06 (Kafka fundamentals)
 - Docker and Docker Compose installed
 
 ## Setup

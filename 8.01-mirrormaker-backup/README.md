@@ -1,4 +1,4 @@
-# Exercise 12: Topic Backup with MirrorMaker 2
+# Exercise 8.01: Topic Backup with MirrorMaker 2
 
 ## Learning Objectives
 
@@ -20,7 +20,7 @@ In this exercise, you'll create:
 
 ## Prerequisites
 
-- Completed exercises 1-11
+- Completed exercises 1.01-3.02 (Kafka fundamentals and Schema Registry)
 - Docker and Docker Compose installed
 - Basic understanding of Kafka topics and consumers
 - Go 1.21 or later installed (optional, for sample applications)

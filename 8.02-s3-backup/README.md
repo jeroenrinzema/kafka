@@ -1,4 +1,4 @@
-# Exercise 13: Topic Backup to S3 Storage
+# Exercise 8.02: Topic Backup to S3 Storage
 
 ## Learning Objectives
 

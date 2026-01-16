@@ -31,6 +31,7 @@ Core concepts and basic operations with Apache Kafka.
 | [1.04-consumer-basics](./1.04-consumer-basics/) | Consumer Basics | Consuming messages from Kafka |
 | [1.05-topic-partitions](./1.05-topic-partitions/) | Topic Partitions | Understanding and working with partitions |
 | [1.06-offset-management](./1.06-offset-management/) | Offset Management | Consuming from specific offsets and timestamps |
+| [1.07-multi-broker-cluster](./1.07-multi-broker-cluster/) | Multi-Broker Cluster | Building a multi-broker Kafka cluster step by step |
 
 ### Part 2: CLI Tools & Consumer Patterns
 
@@ -52,6 +53,8 @@ Managing message schemas and integrating external data sources with Kafka Connec
 | [3.02-schema-registry-client](./3.02-schema-registry-client/) | Schema Registry Client | Producing and consuming with Schema Registry in Go |
 | [3.03-connect-fundamentals](./3.03-connect-fundamentals/) | Kafka Connect Fundamentals | Kafka Connect architecture, REST API, source and sink connectors |
 | [3.04-debezium-cdc](./3.04-debezium-cdc/) | Change Data Capture | Capturing database changes with Debezium PostgreSQL connector |
+| [3.05-vector-integration](./3.05-vector-integration/) | Vector Integration | Collecting logs with Vector and sending to Kafka |
+| [3.06-elasticsearch-sink](./3.06-elasticsearch-sink/) | Elasticsearch Sink | Sinking Kafka data to Elasticsearch for log analysis |
 
 ### Part 4: Event Design & Stream Processing
 
@@ -79,6 +82,7 @@ Setting up monitoring and observability for Kafka clusters.
 | Exercise | Topic | Description |
 |----------|-------|-------------|
 | [6.01-grafana-monitoring](./6.01-grafana-monitoring/) | Grafana Monitoring | Monitoring Kafka with Prometheus and Grafana |
+| [6.02-benchmarking-performance](./6.02-benchmarking-performance/) | Benchmarking & Performance | Performance testing and tuning with Grafana visualization |
 
 ### Part 7: Cluster Administration
 
@@ -134,7 +138,7 @@ Follow the exercises in order. Each part builds on concepts from previous parts:
 
 - **Part 1**: Official Apache Kafka binaries (kafka-topics, kafka-console-producer, kafka-console-consumer)
 - **Part 2**: [Kaf](https://github.com/birdayz/kaf) - A modern CLI for Apache Kafka
-- **Part 3**: [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/) - Schema management and validation; [Kafka Connect](https://kafka.apache.org/documentation/#connect) - Data integration framework; [Debezium](https://debezium.io/) - Change Data Capture
+- **Part 3**: [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/) - Schema management and validation; [Kafka Connect](https://kafka.apache.org/documentation/#connect) - Data integration framework; [Debezium](https://debezium.io/) - Change Data Capture; [Vector](https://vector.dev/) - Log/metrics pipeline; [Elasticsearch](https://www.elastic.co/) - Search and analytics
 - **Part 4**: [ksqlDB](https://ksqldb.io/) - Streaming SQL engine for Kafka
 - **Part 6**: [Prometheus](https://prometheus.io/) & [Grafana](https://grafana.com/) - Monitoring stack
 

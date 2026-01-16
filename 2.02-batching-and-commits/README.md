@@ -1,4 +1,4 @@
-# Exercise 07: Batching and Offset Commits
+# Exercise 2.02: Batching and Offset Commits
 
 ## Learning Objectives
 

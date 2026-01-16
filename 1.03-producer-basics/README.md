@@ -1,4 +1,4 @@
-# Exercise 03: Producer Basics
+# Exercise 1.03: Producer Basics
 
 ## Learning Objectives
 

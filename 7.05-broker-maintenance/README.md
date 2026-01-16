@@ -1,4 +1,4 @@
-# Exercise 27: Broker Maintenance & Graceful Shutdown
+# Exercise 7.05: Broker Maintenance & Graceful Shutdown
 
 ## Learning Objectives
 
@@ -88,7 +88,7 @@ Partition reassignment: Change the list itself (may involve data movement)
 
 ## Prerequisites
 
-- Completed exercises 1-5 (Kafka fundamentals)
+- Completed exercises 1.01-1.06 (Kafka fundamentals)
 - Docker and Docker Compose installed
 
 ## Setup

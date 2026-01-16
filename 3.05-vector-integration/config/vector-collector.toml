@@ -1,0 +1,75 @@
+# Vector Collector Configuration
+# Collects logs from file and sends to Kafka
+
+# ============================================================================
+# DATA DIRECTORY
+# ============================================================================
+data_dir = "/var/lib/vector"
+
+# ============================================================================
+# SOURCES
+# ============================================================================
+
+# Read log files from the demo application
+[sources.file_source]
+type = "file"
+include = ["/var/log/app/*.log"]
+read_from = "beginning"
+fingerprint.strategy = "device_and_inode"
+
+# ============================================================================
+# TRANSFORMS
+# ============================================================================
+
+# Parse JSON logs
+[transforms.parse_logs]
+type = "remap"
+inputs = ["file_source"]
+source = '''
+  # Try to parse the message as JSON
+  parsed, err = parse_json(.message)
+  if err == null {
+    . = merge!(., parsed)
+    del(.message)
+  }
+
+  # Add metadata
+  .host = get_hostname!()
+  .source_type = "file"
+  .collector = "vector"
+'''
+
+# ============================================================================
+# SINKS
+# ============================================================================
+
+# Send to Kafka
+[sinks.kafka]
+type = "kafka"
+inputs = ["parse_logs"]
+bootstrap_servers = "kafka:9092"
+topic = "application-logs"
+
+# Encoding
+encoding.codec = "json"
+
+# Batching for performance
+batch.max_bytes = 1048576
+batch.timeout_secs = 1
+
+# Healthcheck
+healthcheck.enabled = true
+
+# ============================================================================
+# INTERNAL METRICS
+# ============================================================================
+
+# Expose Prometheus metrics
+[sinks.prometheus]
+type = "prometheus_exporter"
+inputs = ["internal_metrics"]
+address = "0.0.0.0:9598"
+
+[sources.internal_metrics]
+type = "internal_metrics"
+scrape_interval_secs = 5

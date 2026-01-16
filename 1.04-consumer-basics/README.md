@@ -1,4 +1,4 @@
-# Exercise 04: Consumer Basics
+# Exercise 1.04: Consumer Basics
 
 ## Learning Objectives
 

@@ -1,4 +1,4 @@
-# Exercise 11: Producing and Consuming with Schema Registry
+# Exercise 3.02: Producing and Consuming with Schema Registry
 
 ## Learning Objectives
 
@@ -17,7 +17,7 @@ In this exercise, you'll create:
 
 ## Prerequisites
 
-- Completed exercises 1-10
+- Completed exercise 3.01 (Schema Registry)
 - Docker and Docker Compose installed
 - Go 1.21 or later installed
 - Basic understanding of Avro schemas

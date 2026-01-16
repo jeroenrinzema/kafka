@@ -1,4 +1,4 @@
-# Exercise 20: Debugging Challenge
+# Exercise 10.01: Debugging Challenge
 
 ## Learning Objectives
 
@@ -249,10 +249,10 @@ docker compose down
 ## Next Steps
 
 Now that you've debugged these issues, you can:
-- Review exercises 03-04 on producer/consumer basics
-- Study exercise 05 on topic partitions
-- Explore exercise 06 on offset management
-- Check exercise 08 on retry mechanisms
+- Review exercises 1.03-1.04 on producer/consumer basics
+- Study exercise 1.05 on topic partitions
+- Explore exercise 1.06 on offset management
+- Check exercise 2.03 on retry mechanisms
 
 ## Reflection Questions
 

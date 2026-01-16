@@ -1,4 +1,4 @@
-# Exercise 19: ksqlDB Basics
+# Exercise 4.03: ksqlDB Basics
 
 ## Learning Objectives
 

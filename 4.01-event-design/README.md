@@ -1,4 +1,4 @@
-# Exercise 15: Event Design Patterns - Good vs Bad
+# Exercise 4.01: Event Design Patterns - Good vs Bad
 
 ## Learning Objectives
 
@@ -21,7 +21,7 @@ This is a **kata-style exercise** focused on critical thinking and design decisi
 
 ## Prerequisites
 
-- Completed exercises 1-14
+- Completed exercises 1.01-3.06 (Kafka fundamentals, Schema Registry, and Kafka Connect)
 - Docker and Docker Compose installed
 - Understanding of JSON and data modeling
 - Basic knowledge of API design principles

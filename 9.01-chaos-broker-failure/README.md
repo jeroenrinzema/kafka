@@ -1,4 +1,4 @@
-# Exercise 17: Chaos Engineering - Broker Failure & Leader Election
+# Exercise 9.01: Chaos Engineering - Broker Failure & Leader Election
 
 ## Learning Objectives
 
@@ -22,7 +22,7 @@ In this exercise, you'll:
 
 ## Prerequisites
 
-- Completed exercises 1-16
+- Completed exercises 1.01-7.06 (Kafka fundamentals through Operations)
 - Docker and Docker Compose installed
 - Understanding of Kafka replication concepts
 - Basic knowledge of distributed systems

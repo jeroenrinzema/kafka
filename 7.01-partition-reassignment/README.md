@@ -1,4 +1,4 @@
-# Exercise 23: Partition Reassignment & Broker Decommissioning
+# Exercise 7.01: Partition Reassignment & Broker Decommissioning
 
 ## Learning Objectives
 
@@ -55,7 +55,7 @@ This exercise uses a 4-broker cluster to demonstrate scaling scenarios:
 
 ## Prerequisites
 
-- Completed exercises 1-5 (Kafka fundamentals)
+- Completed exercises 1.01-1.06 (Kafka fundamentals)
 - Docker and Docker Compose installed
 
 ## Tasks

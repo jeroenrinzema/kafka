@@ -1,4 +1,4 @@
-# Exercise 05: Topic Partitions
+# Exercise 1.05: Topic Partitions
 
 ## Learning Objectives
 

@@ -1,4 +1,4 @@
-# Exercise 16: Grafana Monitoring
+# Exercise 6.01: Grafana Monitoring
 
 Learn how to monitor your Kafka cluster using Grafana, Prometheus, and JMX Exporter.
 
@@ -160,6 +160,9 @@ docker compose down -v
 
 ## Next Steps
 
+Continue to [Exercise 6.02: Benchmarking & Performance](../6.02-benchmarking-performance/) to learn how to use Kafka's built-in performance testing tools and visualize results in Grafana.
+
+### Additional Ideas
 - Add alerting rules in Prometheus for critical metrics
 - Create separate dashboards for different use cases (producer, consumer, operations)
 - Monitor consumer lag (requires additional configuration)
