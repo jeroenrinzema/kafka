@@ -4,9 +4,9 @@
 
 - Understand Kafka cluster architecture with multiple brokers
 - Configure KRaft mode with multiple controllers and brokers
-- Add brokers incrementally to a running cluster
 - Verify cluster health and partition distribution
 - Understand quorum voting and leader election
+- Test high availability through broker failure scenarios
 
 ## Background
 
@@ -24,17 +24,19 @@ In KRaft mode, each node can have one or more roles:
 - **Broker**: Stores data and serves client requests
 - **Combined**: Acts as both controller and broker (common for smaller clusters)
 
-### Quorum Voters
+### Quorum Voters and Consensus
 
 Controllers form a quorum for consensus. The `KAFKA_CONTROLLER_QUORUM_VOTERS` setting defines which nodes participate:
 ```
-1@broker1:9093,2@broker2:9093,3@broker3:9093
+1@broker1:29093,2@broker2:29093,3@broker3:29093
 ```
 Format: `nodeId@hostname:controllerPort`
 
+> **Important**: The Raft consensus protocol requires a **majority** of voters to be available for leader election. With 3 voters, at least 2 must be running. This means you cannot start a single broker when the quorum expects 3 voters - all brokers in the quorum must start together.
+
 ## Architecture
 
-In this exercise, we'll build a 3-broker cluster step by step:
+In this exercise, we'll work with a 3-broker cluster:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -44,7 +46,7 @@ In this exercise, we'll build a 3-broker cluster step by step:
 │  │  Broker 1   │    │  Broker 2   │    │  Broker 3   │         │
 │  │ (Controller)│    │ (Controller)│    │ (Controller)│         │
 │  │  Node ID: 1 │    │  Node ID: 2 │    │  Node ID: 3 │         │
-│  │  Port: 9092 │    │  Port: 9093 │    │  Port: 9094 │         │
+│  │ Host: 9092  │    │ Host: 9093  │    │ Host: 9094  │         │
 │  └─────────────┘    └─────────────┘    └─────────────┘         │
 │         │                  │                  │                 │
 │         └──────────────────┼──────────────────┘                 │
@@ -54,6 +56,14 @@ In this exercise, we'll build a 3-broker cluster step by step:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+**Port mapping (for host access):**
+- Broker 1: localhost:9092 (host) → 9092 (container)
+- Broker 2: localhost:9093 (host) → 9092 (container)
+- Broker 3: localhost:9094 (host) → 9092 (container)
+
+**Internal network (used by kafka-client):**
+- All brokers: port 29092 (PLAINTEXT listener)
+
 ## Prerequisites
 
 - Docker and Docker Compose installed
@@ -61,102 +71,79 @@ In this exercise, we'll build a 3-broker cluster step by step:
 
 ## Tasks
 
-### Task 1: Start with a Single Broker
+### Task 1: Review the Cluster Configuration
 
-First, let's understand how a single broker is configured. Review the `docker-compose.yaml`:
+Before starting the cluster, let's understand the configuration. Review `docker-compose.yaml`:
 
 ```bash
-# Look at the single broker configuration
 cat docker-compose.yaml
 ```
 
 Key configuration elements:
-- `KAFKA_NODE_ID`: Unique identifier for this broker (1, 2, 3, etc.)
-- `KAFKA_PROCESS_ROLES`: What roles this node plays (broker, controller, or both)
+- `KAFKA_NODE_ID`: Unique identifier for this broker (1, 2, 3)
+- `KAFKA_PROCESS_ROLES`: What roles this node plays (`broker,controller`)
 - `KAFKA_CONTROLLER_QUORUM_VOTERS`: All controllers in the cluster
 - `CLUSTER_ID`: Must be the same across all brokers in a cluster
+- `kafka-client`: A dedicated container for running CLI commands on the internal network
 
-Start just the first broker:
+### Task 2: Start the Cluster
+
+Since KRaft requires a majority of voters for quorum, we start all brokers together:
 
 ```bash
-docker compose up -d broker1
+docker compose up -d
 ```
 
-Verify it's running:
+Wait for all brokers to become healthy:
 
 ```bash
 docker compose ps
 ```
 
-### Task 2: Explore the Single Broker Cluster
+You should see all 3 brokers with status `healthy` and the `kafka-client` container running. This may take 15-30 seconds.
 
-Connect to the broker and check its status:
+### Task 3: Verify Cluster Formation
 
-```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-metadata.sh \
-  --snapshot /var/lib/kafka/data/__cluster_metadata-0/00000000000000000000.log \
-  --command "cat"
-```
-
-Check the cluster ID:
+Check the cluster ID (should be the same for all brokers):
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-cluster.sh \
-  cluster-id --bootstrap-server localhost:9092
+docker exec kafka-client /opt/kafka/bin/kafka-cluster.sh \
+  cluster-id --bootstrap-server broker1:29092
 ```
 
-List brokers (should show only 1):
+List all brokers in the cluster using the quorum replication command:
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-broker-api-versions.sh \
-  --bootstrap-server localhost:9092 | grep "id:"
+docker exec kafka-client /opt/kafka/bin/kafka-metadata-quorum.sh \
+  --bootstrap-server broker1:29092 describe --replication
 ```
 
-### Task 3: Add the Second Broker
+You should see all 3 nodes listed with their status (one Leader, two Followers).
 
-Now add broker2 to the cluster:
+### Task 4: Check Controller Quorum Status
+
+View the current controller quorum status:
 
 ```bash
-docker compose up -d broker2
+docker exec kafka-client /opt/kafka/bin/kafka-metadata-quorum.sh \
+  --bootstrap-server broker1:29092 describe --status
 ```
 
-Wait a few seconds for it to join, then verify:
-
-```bash
-# Check both containers are running
-docker compose ps
-
-# List all brokers in the cluster
-docker exec -it broker1 /opt/kafka/bin/kafka-broker-api-versions.sh \
-  --bootstrap-server localhost:9092 | grep "id:"
-```
-
-You should now see two brokers listed.
-
-### Task 4: Add the Third Broker
-
-Complete the cluster by adding broker3:
-
-```bash
-docker compose up -d broker3
-```
-
-Verify all three brokers:
-
-```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-broker-api-versions.sh \
-  --bootstrap-server localhost:9092 | grep "id:"
-```
+This shows:
+- **LeaderId**: Which broker is the active controller
+- **LeaderEpoch**: How many leader elections have occurred
+- **HighWatermark**: Latest committed offset in the metadata log
+- **CurrentVoters**: All nodes participating in the quorum
 
 ### Task 5: Create a Replicated Topic
 
 Now that we have multiple brokers, we can create topics with replication:
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-topics.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --create \
   --topic replicated-topic \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server broker1:29092 \
   --partitions 6 \
   --replication-factor 3
 ```
@@ -164,14 +151,14 @@ docker exec -it broker1 /opt/kafka/bin/kafka-topics.sh \
 Describe the topic to see partition distribution:
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-topics.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic replicated-topic \
-  --bootstrap-server localhost:9092
+  --bootstrap-server broker1:29092
 ```
 
 Notice how:
-- Each partition has a **Leader** (one broker)
+- Each partition has a **Leader** (one broker handles reads/writes)
 - Each partition has **Replicas** on multiple brokers
 - **ISR** (In-Sync Replicas) shows which replicas are caught up
 
@@ -180,17 +167,19 @@ Notice how:
 Create another topic and observe the distribution:
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-topics.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --create \
   --topic distributed-topic \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server broker1:29092 \
   --partitions 9 \
   --replication-factor 2
+```
 
-docker exec -it broker1 /opt/kafka/bin/kafka-topics.sh \
+```bash
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic distributed-topic \
-  --bootstrap-server localhost:9092
+  --bootstrap-server broker1:29092
 ```
 
 With 9 partitions and replication factor 2:
@@ -198,15 +187,14 @@ With 9 partitions and replication factor 2:
 - Leaders should be roughly evenly distributed
 - Each broker should lead approximately 3 partitions
 
-### Task 7: Test High Availability
+### Task 7: Produce Messages to the Cluster
 
-Let's produce some messages and then simulate a broker failure:
+Let's produce some messages to our replicated topic:
 
 ```bash
-# Produce messages
-docker exec -it broker1 /opt/kafka/bin/kafka-console-producer.sh \
+docker exec -it kafka-client /opt/kafka/bin/kafka-console-producer.sh \
   --topic replicated-topic \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server broker1:29092 \
   --property "parse.key=true" \
   --property "key.separator=:"
 ```
@@ -216,43 +204,54 @@ Type some messages (key:value format):
 user1:{"action": "login"}
 user2:{"action": "purchase"}
 user3:{"action": "logout"}
+user1:{"action": "browse"}
+user2:{"action": "checkout"}
 ```
 Press Ctrl+D to exit.
 
-Now stop broker2:
+### Task 8: Simulate Broker Failure
+
+Now let's test high availability by stopping one broker:
 
 ```bash
 docker compose stop broker2
 ```
 
+Check which brokers are still available:
+
+```bash
+docker compose ps
+```
+
 Check the topic description again:
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-topics.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic replicated-topic \
-  --bootstrap-server localhost:9092
+  --bootstrap-server broker1:29092
 ```
 
 Notice:
-- Leaders have been reassigned from broker2
-- ISR now shows only 2 replicas for each partition
-- The cluster continues to function
+- Leaders have been reassigned away from broker2
+- ISR now shows only 2 replicas for affected partitions
+- The cluster continues to function!
 
-### Task 8: Consume Messages During Failure
+### Task 9: Consume Messages During Failure
 
-Even with one broker down, we can still consume:
+Even with one broker down, we can still consume all messages:
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-console-consumer.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-console-consumer.sh \
   --topic replicated-topic \
-  --bootstrap-server localhost:9092 \
-  --from-beginning
+  --bootstrap-server broker1:29092 \
+  --from-beginning \
+  --timeout-ms 5000
 ```
 
-Press Ctrl+C to exit.
+All messages are still available because they were replicated to multiple brokers.
 
-### Task 9: Recover the Failed Broker
+### Task 10: Recover the Failed Broker
 
 Bring broker2 back:
 
@@ -260,62 +259,71 @@ Bring broker2 back:
 docker compose start broker2
 ```
 
-Wait a moment, then check the topic:
+Wait a few seconds for it to rejoin, then check the topic:
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-topics.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic replicated-topic \
-  --bootstrap-server localhost:9092
+  --bootstrap-server broker1:29092
 ```
 
 The ISR should now show all 3 replicas again as broker2 catches up.
 
-### Task 10: Check Controller Status
+### Task 11: Observe Controller Failover
 
-See which broker is the active controller:
+Check which broker is currently the active controller:
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-metadata.sh \
-  --snapshot /var/lib/kafka/data/__cluster_metadata-0/00000000000000000000.log \
-  --command "cat" | grep -i "controller"
+docker exec kafka-client /opt/kafka/bin/kafka-metadata-quorum.sh \
+  --bootstrap-server broker1:29092 describe --status | grep LeaderId
 ```
 
-Or use the describe command on the quorum:
+Stop the current controller (if LeaderId is 1, stop broker1; adjust accordingly):
 
 ```bash
-docker exec -it broker1 /opt/kafka/bin/kafka-metadata.sh quorum-info \
-  --bootstrap-server localhost:9092
-```
-
-### Task 11: Test Controller Failover
-
-Stop the current active controller and observe leader election:
-
-```bash
-# First, note which broker is the active controller
-# Then stop it (assuming broker1 is the controller):
+# Example: if broker1 is the leader
 docker compose stop broker1
-
-# Check from another broker
-docker exec -it broker2 /opt/kafka/bin/kafka-broker-api-versions.sh \
-  --bootstrap-server broker2:9092 | grep "id:"
 ```
 
-A new controller will be elected automatically. Bring broker1 back:
+Check the new controller from another broker:
+
+```bash
+docker exec kafka-client /opt/kafka/bin/kafka-metadata-quorum.sh \
+  --bootstrap-server broker2:29092 describe --status
+```
+
+A new controller has been elected automatically! The cluster continues to operate.
+
+Bring the stopped broker back:
 
 ```bash
 docker compose start broker1
 ```
 
+### Task 12: Check Log Directories
+
+See how data is distributed across brokers:
+
+```bash
+docker exec kafka-client /opt/kafka/bin/kafka-log-dirs.sh \
+  --bootstrap-server broker1:29092 \
+  --describe \
+  --topic-list replicated-topic
+```
+
+This shows the size and offset lag for each partition replica on each broker.
+
 ## Verification
 
 You've successfully completed this exercise when:
-- ✅ You can start brokers incrementally and see them join the cluster
+- ✅ You can start a 3-broker cluster and verify all brokers are healthy
+- ✅ You understand the controller quorum and can check its status
 - ✅ You can create topics with replication across multiple brokers
-- ✅ You understand partition distribution across brokers
-- ✅ You've tested broker failure and recovery
-- ✅ You've observed controller failover
+- ✅ You understand partition distribution (leaders, replicas, ISR)
+- ✅ You've tested broker failure and observed automatic failover
+- ✅ You've observed controller failover when stopping the active controller
+- ✅ You've verified data availability during partial outages
 
 ## Key Configuration Summary
 
@@ -323,40 +331,49 @@ You've successfully completed this exercise when:
 |---------------|---------|
 | `KAFKA_NODE_ID` | Unique broker identifier |
 | `KAFKA_PROCESS_ROLES` | Node roles (broker, controller, or both) |
-| `KAFKA_CONTROLLER_QUORUM_VOTERS` | List of all controllers |
-| `CLUSTER_ID` | Unique cluster identifier (must match) |
+| `KAFKA_CONTROLLER_QUORUM_VOTERS` | List of all controllers for quorum |
+| `CLUSTER_ID` | Unique cluster identifier (must match on all brokers) |
 | `KAFKA_LISTENERS` | Network listeners for this broker |
 | `KAFKA_ADVERTISED_LISTENERS` | Addresses clients use to connect |
+| `KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR` | Replication for internal offset topic |
+| `KAFKA_MIN_INSYNC_REPLICAS` | Minimum replicas for write acknowledgment |
 
 ## Best Practices
 
-1. **Odd number of controllers**: Use 3, 5, or 7 controllers for proper quorum
-2. **Separate controller nodes**: In large clusters, dedicate nodes to controller role
+1. **Odd number of controllers**: Use 3, 5, or 7 controllers for proper quorum (avoids split-brain)
+2. **Separate controller nodes**: In large clusters, dedicate nodes to controller role only
 3. **Consistent cluster ID**: All brokers must share the same `CLUSTER_ID`
-4. **Replication factor ≥ 3**: For production, always replicate data
-5. **Min ISR = 2**: Ensure at least 2 replicas before acknowledging writes
+4. **Replication factor ≥ 3**: For production, always replicate critical data
+5. **Min ISR ≥ 2**: Ensure at least 2 replicas acknowledge writes before success
+6. **Monitor ISR shrinkage**: Alerts when ISR drops below replication factor
 
 ## Troubleshooting
 
-### Broker won't join cluster
+### Cluster won't start / No leader elected
 
+- Ensure a majority of quorum voters are running (e.g., 2 out of 3)
 - Verify `CLUSTER_ID` matches across all brokers
-- Check `KAFKA_CONTROLLER_QUORUM_VOTERS` includes all controllers
-- Ensure network connectivity between brokers
+- Check `KAFKA_CONTROLLER_QUORUM_VOTERS` includes all controllers with correct hostnames
 
-### Controller election stuck
+### Broker won't rejoin after restart
 
-- Check that a majority of controllers are running (2 out of 3)
-- Verify controller ports are accessible
+- Check logs: `docker compose logs broker1`
+- Ensure the cluster ID hasn't changed
+- Verify network connectivity between brokers
 
-### Replication lag
+### Replication lag / ISR shrinking
 
 - Check disk I/O and network bandwidth
-- Monitor ISR changes with `kafka-topics.sh --describe`
+- Monitor with `kafka-topics.sh --describe`
+- Consider increasing `replica.fetch.max.bytes`
+
+### Why use kafka-client instead of exec into brokers?
+
+The `kafka-client` container connects via the internal Docker network (PLAINTEXT listener on port 29092). When running commands directly inside a broker container using the PLAINTEXT_HOST listener, metadata returned by Kafka includes `localhost` addresses that only work from the host machine, not from inside containers.
 
 ## Cleanup
 
-Stop all brokers:
+Stop all containers:
 
 ```bash
 docker compose down
