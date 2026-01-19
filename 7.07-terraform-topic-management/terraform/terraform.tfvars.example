@@ -1,0 +1,61 @@
+# -----------------------------------------------------------------------------
+# Terraform Variables Example
+# -----------------------------------------------------------------------------
+# Copy this file to terraform.tfvars and customize for your environment.
+# -----------------------------------------------------------------------------
+
+# Kafka bootstrap servers
+# For local Docker Compose setup:
+kafka_bootstrap_servers = ["localhost:9092", "localhost:9094", "localhost:9095"]
+
+# For a remote cluster:
+# kafka_bootstrap_servers = ["kafka-1.example.com:9092", "kafka-2.example.com:9092"]
+
+# Environment name (used as prefix for all topic names)
+environment = "dev"
+
+# Default settings for topics
+default_replication_factor = 3
+default_partitions         = 3
+
+# Dynamic topics - add additional topics here
+topics = {
+  # Example: Analytics event topic
+  "analytics-events" = {
+    partitions         = 6
+    replication_factor = 3
+    config = {
+      "cleanup.policy" = "delete"
+      "retention.ms"   = "86400000" # 1 day
+    }
+  }
+
+  # Example: Audit log topic with longer retention
+  "audit-logs" = {
+    partitions         = 3
+    replication_factor = 3
+    config = {
+      "cleanup.policy" = "delete"
+      "retention.ms"   = "7776000000" # 90 days
+    }
+  }
+
+  # Example: User sessions compacted topic
+  "user-sessions" = {
+    partitions = 12
+    config = {
+      "cleanup.policy"            = "compact"
+      "min.cleanable.dirty.ratio" = "0.3"
+      "segment.ms"                = "3600000" # 1 hour
+    }
+  }
+
+  # Example: Notifications topic with small retention
+  "notifications" = {
+    partitions = 3
+    config = {
+      "cleanup.policy" = "delete"
+      "retention.ms"   = "3600000" # 1 hour
+    }
+  }
+}
