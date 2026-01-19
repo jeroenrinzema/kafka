@@ -72,8 +72,9 @@ Securing Kafka with authentication, authorization, and encryption.
 
 | Exercise | Topic | Description |
 |----------|-------|-------------|
-| [5.01-access-control-lists](./5.01-access-control-lists/) | Access Control Lists | Securing Kafka with SASL authentication and ACL authorization |
-| [5.02-ssl-encryption](./5.02-ssl-encryption/) | SSL/TLS Encryption | Encrypting Kafka communication with SSL/TLS and mutual TLS (mTLS) |
+| [5.01-access-control-lists](./5.01-access-control-lists/) | Access Control Lists | Securing Kafka with SASL/PLAIN authentication and ACL authorization |
+| [5.02-sasl-scram](./5.02-sasl-scram/) | SASL/SCRAM Authentication | Secure authentication with SCRAM-SHA-256/512 and dynamic credential management |
+| [5.03-ssl-encryption](./5.03-ssl-encryption/) | SSL/TLS Encryption | Encrypting Kafka communication with SSL/TLS and mutual TLS (mTLS) |
 
 ### Part 6: Monitoring & Observability
 
@@ -96,6 +97,7 @@ Essential skills for managing and operating Kafka clusters.
 | [7.04-partition-scaling](./7.04-partition-scaling/) | Partition Scaling | Reducing partition counts using the Create-Migrate-Delete pattern |
 | [7.05-broker-maintenance](./7.05-broker-maintenance/) | Broker Maintenance | Zero-downtime broker restarts with graceful leadership migration |
 | [7.06-dynamic-broker-config](./7.06-dynamic-broker-config/) | Dynamic Broker Config | Hot-reloading broker configurations without restarts |
+| [7.07-terraform-topic-management](./7.07-terraform-topic-management/) | Terraform Topic Management | Infrastructure-as-Code for Kafka topics using Terraform |
 
 ### Part 8: Disaster Recovery
 
@@ -113,6 +115,7 @@ Chaos engineering and failure testing for Kafka clusters.
 | Exercise | Topic | Description |
 |----------|-------|-------------|
 | [9.01-chaos-broker-failure](./9.01-chaos-broker-failure/) | Chaos Engineering | Testing broker failures and cluster resilience |
+| [9.02-chaos-split-brain](./9.02-chaos-split-brain/) | Split-Brain Scenarios | Network partition simulation and quorum-based recovery |
 
 ### Part 10: Troubleshooting (Capstone)
 
