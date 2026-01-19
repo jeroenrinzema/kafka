@@ -1,0 +1,229 @@
+services:
+  kafka-1:
+    image: apache/kafka:latest
+    hostname: kafka-1
+    container_name: kafka-1
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+      - "9101:9101"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://kafka-1:19092,CONTROLLER://kafka-1:9093,PLAINTEXT_HOST://0.0.0.0:9092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-1:19092,PLAINTEXT_HOST://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      # Replication settings
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # Faster failure detection for split-brain scenarios
+      KAFKA_REPLICA_LAG_TIME_MAX_MS: 10000
+      # CRITICAL: Prevent data loss - disable unclean leader election
+      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      # Controlled shutdown
+      KAFKA_CONTROLLED_SHUTDOWN_ENABLE: "true"
+      KAFKA_CONTROLLED_SHUTDOWN_MAX_RETRIES: 3
+      # KRaft quorum settings - faster detection
+      KAFKA_CONTROLLER_QUORUM_ELECTION_TIMEOUT_MS: 1000
+      KAFKA_CONTROLLER_QUORUM_FETCH_TIMEOUT_MS: 2000
+      # JMX Configuration
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: kafka-1
+      KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka-1 -Dcom.sun.management.jmxremote.rmi.port=9101"
+    networks:
+      - kafka-net
+
+  kafka-2:
+    image: apache/kafka:latest
+    hostname: kafka-2
+    container_name: kafka-2
+    ports:
+      - "9094:9094"
+      - "19094:19094"
+      - "9102:9102"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://kafka-2:19094,CONTROLLER://kafka-2:9093,PLAINTEXT_HOST://0.0.0.0:9094"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-2:19094,PLAINTEXT_HOST://localhost:9094"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_REPLICA_LAG_TIME_MAX_MS: 10000
+      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_CONTROLLED_SHUTDOWN_ENABLE: "true"
+      KAFKA_CONTROLLED_SHUTDOWN_MAX_RETRIES: 3
+      KAFKA_CONTROLLER_QUORUM_ELECTION_TIMEOUT_MS: 1000
+      KAFKA_CONTROLLER_QUORUM_FETCH_TIMEOUT_MS: 2000
+      # JMX Configuration
+      KAFKA_JMX_PORT: 9102
+      KAFKA_JMX_HOSTNAME: kafka-2
+      KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka-2 -Dcom.sun.management.jmxremote.rmi.port=9102"
+    networks:
+      - kafka-net
+
+  kafka-3:
+    image: apache/kafka:latest
+    hostname: kafka-3
+    container_name: kafka-3
+    ports:
+      - "9095:9095"
+      - "19095:19095"
+      - "9103:9103"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://kafka-3:19095,CONTROLLER://kafka-3:9093,PLAINTEXT_HOST://0.0.0.0:9095"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-3:19095,PLAINTEXT_HOST://localhost:9095"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_REPLICA_LAG_TIME_MAX_MS: 10000
+      KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE: "false"
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_CONTROLLED_SHUTDOWN_ENABLE: "true"
+      KAFKA_CONTROLLED_SHUTDOWN_MAX_RETRIES: 3
+      KAFKA_CONTROLLER_QUORUM_ELECTION_TIMEOUT_MS: 1000
+      KAFKA_CONTROLLER_QUORUM_FETCH_TIMEOUT_MS: 2000
+      # JMX Configuration
+      KAFKA_JMX_PORT: 9103
+      KAFKA_JMX_HOSTNAME: kafka-3
+      KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka-3 -Dcom.sun.management.jmxremote.rmi.port=9103"
+    networks:
+      - kafka-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: split-brain-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:19092,kafka-2:19094,kafka-3:19095
+    networks:
+      - kafka-net
+
+  jmx-exporter-1:
+    image: bitnami/jmx-exporter:latest
+    hostname: jmx-exporter-1
+    container_name: jmx-exporter-1
+    ports:
+      - "9404:5556"
+    environment:
+      SERVICE_PORT: 5556
+    command:
+      - "5556"
+      - "/etc/jmx-exporter/kafka-broker-1.yml"
+    volumes:
+      - ./jmx-exporter:/etc/jmx-exporter
+    networks:
+      - kafka-net
+    depends_on:
+      - kafka-1
+
+  jmx-exporter-2:
+    image: bitnami/jmx-exporter:latest
+    hostname: jmx-exporter-2
+    container_name: jmx-exporter-2
+    ports:
+      - "9405:5556"
+    environment:
+      SERVICE_PORT: 5556
+    command:
+      - "5556"
+      - "/etc/jmx-exporter/kafka-broker-2.yml"
+    volumes:
+      - ./jmx-exporter:/etc/jmx-exporter
+    networks:
+      - kafka-net
+    depends_on:
+      - kafka-2
+
+  jmx-exporter-3:
+    image: bitnami/jmx-exporter:latest
+    hostname: jmx-exporter-3
+    container_name: jmx-exporter-3
+    ports:
+      - "9406:5556"
+    environment:
+      SERVICE_PORT: 5556
+    command:
+      - "5556"
+      - "/etc/jmx-exporter/kafka-broker-3.yml"
+    volumes:
+      - ./jmx-exporter:/etc/jmx-exporter
+    networks:
+      - kafka-net
+    depends_on:
+      - kafka-3
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    hostname: prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    networks:
+      - kafka-net
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    hostname: grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: ""
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - kafka-net
+    depends_on:
+      - prometheus
+
+networks:
+  kafka-net:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
