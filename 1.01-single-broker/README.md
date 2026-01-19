@@ -68,12 +68,7 @@ You've successfully completed this exercise when:
 
 To stop the broker:
 ```bash
-docker compose -f 01-single-broker.yaml down
-```
-
-To remove all data:
-```bash
-docker compose -f 01-single-broker.yaml down -v
+docker compose down -v
 ```
 
 ## Next Steps
