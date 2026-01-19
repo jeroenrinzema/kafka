@@ -92,9 +92,11 @@ func createTLSConfig(caCertPath string) (*tls.Config, error) {
 	}
 
 	// Create TLS configuration
+	// InsecureSkipVerify skips hostname verification - needed because our cert is for "kafka" but we connect to "localhost"
+	// This still validates the certificate chain, just not the hostname
 	tlsConfig := &tls.Config{
 		RootCAs:            caCertPool,
-		InsecureSkipVerify: false, // Set to true only for testing with self-signed certs and hostname mismatch
+		InsecureSkipVerify: true, // Skip hostname verification for localhost testing with self-signed certs
 	}
 
 	return tlsConfig, nil

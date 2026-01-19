@@ -1,41 +1,37 @@
 services:
   kafka:
-    image: confluentinc/cp-kafka:7.6.0
+    image: apache/kafka:latest
     hostname: kafka
     container_name: kafka
     ports:
+      - "9092:9092" # PLAINTEXT external (for testing rejection)
       - "9093:9093" # SSL external port
     volumes:
-      - ./secrets/kafka.keystore.jks:/etc/kafka/secrets/kafka.keystore.jks:ro
-      - ./secrets/kafka.truststore.jks:/etc/kafka/secrets/kafka.truststore.jks:ro
-      - ./secrets/client.truststore.jks:/etc/kafka/secrets/client.truststore.jks:ro
-      - ./secrets/keystore_creds:/etc/kafka/secrets/keystore_creds:ro
-      - ./secrets/key_creds:/etc/kafka/secrets/key_creds:ro
-      - ./secrets/truststore_creds:/etc/kafka/secrets/truststore_creds:ro
+      - ./secrets:/etc/kafka/secrets:ro
       - ./client-ssl.properties:/tmp/client-ssl.properties:ro
       - ./client-ssl-mtls.properties:/tmp/client-ssl-mtls.properties:ro
     environment:
       # KRaft settings
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
-      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
 
       # Listener configuration
-      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,SSL://kafka:9094,SSL_HOST://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,SSL://kafka:9094,SSL_HOST://localhost:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL,SSL_HOST:SSL
+      KAFKA_LISTENERS: PLAINTEXT://kafka:19092,CONTROLLER://kafka:9094,SSL://kafka:19093,PLAINTEXT_HOST://0.0.0.0:9092,SSL_HOST://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092,SSL://kafka:19093,PLAINTEXT_HOST://localhost:9092,SSL_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SSL:SSL,PLAINTEXT_HOST:PLAINTEXT,SSL_HOST:SSL
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
 
-      # SSL Configuration
+      # SSL Configuration (using filename/credentials format expected by Apache Kafka image)
       KAFKA_SSL_KEYSTORE_FILENAME: kafka.keystore.jks
       KAFKA_SSL_KEYSTORE_CREDENTIALS: keystore_creds
       KAFKA_SSL_KEY_CREDENTIALS: key_creds
       KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.truststore.jks
       KAFKA_SSL_TRUSTSTORE_CREDENTIALS: truststore_creds
       KAFKA_SSL_CLIENT_AUTH: none # Change to 'required' for mTLS
-      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " " # Disable hostname verification for localhost
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "" # Disable hostname verification for localhost
 
       # Topic settings
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -43,6 +39,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    networks:
+      - kafka-net
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -55,8 +53,14 @@ services:
       - ./secrets/client.truststore.jks:/etc/kafka/secrets/client.truststore.jks:ro
     environment:
       KAFKA_CLUSTERS_0_NAME: ssl-cluster
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9094
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19093
       KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/client.truststore.jks
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: kafka-secret
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    driver: bridge

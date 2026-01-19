@@ -1,7 +1,5 @@
 # Exercise 5.02: SSL/TLS Encryption
 
-> **Note**: This exercise uses the Confluent Kafka image (`confluentinc/cp-kafka`) which has robust SSL support out of the box.
-
 ## Learning Objectives
 
 - Understand SSL/TLS encryption in Kafka
@@ -32,7 +30,6 @@ SSL/TLS provides encryption for data in transit between Kafka clients and broker
 This exercise includes a script to generate all necessary certificates. Start by generating them:
 
 ```bash
-cd 22-ssl-encryption
 chmod +x generate-certs.sh
 ./generate-certs.sh
 ```
@@ -65,7 +62,7 @@ You should see logs indicating SSL is configured.
 
 Check the advertised listeners:
 ```bash
-docker exec kafka kafka-broker-api-versions \
+docker exec kafka /opt/kafka/bin/kafka-broker-api-versions.sh \
   --bootstrap-server localhost:9093 \
   --command-config /tmp/client-ssl.properties
 ```
@@ -75,7 +72,7 @@ docker exec kafka kafka-broker-api-versions \
 The client SSL configuration is already mounted in the container. Create a test topic:
 
 ```bash
-docker exec kafka kafka-topics \
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
   --create --topic secure-orders \
   --bootstrap-server localhost:9093 \
   --replication-factor 1 \
@@ -85,7 +82,7 @@ docker exec kafka kafka-topics \
 
 List topics to verify:
 ```bash
-docker exec kafka kafka-topics \
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
   --list \
   --bootstrap-server localhost:9093 \
   --command-config /tmp/client-ssl.properties
@@ -96,13 +93,13 @@ docker exec kafka kafka-topics \
 Produce messages over SSL:
 ```bash
 echo '{"orderId": "1001", "amount": 99.99, "customer": "alice@example.com"}' | \
-  docker exec -i kafka kafka-console-producer \
+  docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
     --topic secure-orders \
     --bootstrap-server localhost:9093 \
     --producer.config /tmp/client-ssl.properties
 
 echo '{"orderId": "1002", "amount": 149.50, "customer": "bob@example.com"}' | \
-  docker exec -i kafka kafka-console-producer \
+  docker exec -i kafka /opt/kafka/bin/kafka-console-producer.sh \
     --topic secure-orders \
     --bootstrap-server localhost:9093 \
     --producer.config /tmp/client-ssl.properties
@@ -110,7 +107,7 @@ echo '{"orderId": "1002", "amount": 149.50, "customer": "bob@example.com"}' | \
 
 Consume messages over SSL:
 ```bash
-docker exec kafka kafka-console-consumer \
+docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --topic secure-orders \
   --from-beginning \
   --bootstrap-server localhost:9093 \
@@ -120,9 +117,9 @@ docker exec kafka kafka-console-consumer \
 
 ### Task 4: Verify Plain Connection is Rejected
 
-Try to connect without SSL configuration (this should FAIL or timeout):
+Try to connect without SSL to the SSL port (this should FAIL):
 ```bash
-docker exec kafka kafka-topics \
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
   --list \
   --bootstrap-server localhost:9093
 ```
@@ -146,7 +143,7 @@ This will:
 
 Verify messages were received:
 ```bash
-docker exec kafka kafka-console-consumer \
+docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --topic secure-orders \
   --from-beginning \
   --max-messages 10 \
@@ -192,11 +189,21 @@ docker compose up -d
 
 Now clients MUST present a valid certificate. Test with the client certificate:
 ```bash
-docker exec kafka kafka-topics \
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
   --list \
   --bootstrap-server localhost:9093 \
   --command-config /tmp/client-ssl-mtls.properties
 ```
+
+You can also verify that the regular SSL config (without client cert) is now rejected:
+```bash
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --list \
+  --bootstrap-server localhost:9093 \
+  --command-config /tmp/client-ssl.properties
+```
+
+This should fail with an SSL authentication error because no client certificate was provided.
 
 ## Key Concepts Learned
 

@@ -101,8 +101,8 @@ echo "==> Step 6: Export CA certificate in PEM format (for Go clients)"
 cp ca-cert ca-cert.pem
 
 echo ""
-echo "==> Step 7: Create credential files for Confluent Kafka"
-# Create password files for Confluent's Docker image
+echo "==> Step 7: Create credential files for Apache Kafka"
+# Create password files for Apache Kafka Docker image
 echo "kafka-secret" > keystore_creds
 echo "kafka-secret" > key_creds
 echo "kafka-secret" > truststore_creds
@@ -121,7 +121,7 @@ echo "  - kafka.keystore.jks: Broker keystore"
 echo "  - kafka.truststore.jks: Broker truststore"
 echo "  - client.keystore.jks: Client keystore (for mTLS)"
 echo "  - client.truststore.jks: Client truststore"
-echo "  - keystore_creds, key_creds, truststore_creds: Password files for Confluent Kafka"
+echo "  - keystore_creds, key_creds, truststore_creds: Password files for Apache Kafka"
 echo ""
 echo "Passwords for all keystores and truststores: $KEYSTORE_PASSWORD"
 echo ""
