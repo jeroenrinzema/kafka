@@ -96,15 +96,23 @@ Start the Kafka cluster:
 docker compose up -d
 ```
 
-Wait about 15 seconds for the cluster to initialize.
+Wait for all brokers to become healthy (about 30 seconds). Check status:
+
+```bash
+docker compose ps
+```
+
+You should see all 3 kafka brokers with status `healthy` and a `kafka-client` container running.
 
 Verify the cluster is running:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --list \
-  --bootstrap-server localhost:9092
+  --bootstrap-server kafka-1:19092
 ```
+
+> **Note**: We use the `kafka-client` container for all CLI commands because it connects via the internal Docker network, which allows reliable communication with all brokers.
 
 ## Tasks
 
@@ -113,17 +121,17 @@ docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
 Create topics for testing:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --create \
   --topic events \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --partitions 6 \
   --replication-factor 2
 
-docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-topics.sh \
   --create \
   --topic logs \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --partitions 3 \
   --replication-factor 2
 ```
@@ -133,12 +141,12 @@ docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
 First, let's see unrestricted performance:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-producer-perf-test.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-producer-perf-test.sh \
   --topic events \
   --num-records 50000 \
   --record-size 1000 \
   --throughput -1 \
-  --producer-props bootstrap.servers=localhost:9092 client.id=fast-producer
+  --producer-props bootstrap.servers=kafka-1:19092 client.id=fast-producer
 ```
 
 Note the throughput (MB/sec). This is the unrestricted baseline.
@@ -148,8 +156,8 @@ Note the throughput (MB/sec). This is the unrestricted baseline.
 List all configured quotas:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --all
@@ -162,8 +170,8 @@ Initially, no quotas are configured.
 Limit the `slow-producer` client to 1 MB/s:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --add-config 'producer_byte_rate=1048576' \
   --entity-type clients \
@@ -175,8 +183,8 @@ docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
 Verify the quota was set:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --entity-name slow-producer
@@ -187,12 +195,12 @@ docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
 Run the producer with the throttled client-id:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-producer-perf-test.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-producer-perf-test.sh \
   --topic events \
   --num-records 10000 \
   --record-size 1000 \
   --throughput -1 \
-  --producer-props bootstrap.servers=localhost:9092 client.id=slow-producer
+  --producer-props bootstrap.servers=kafka-1:19092 client.id=slow-producer
 ```
 
 Compare the throughput to the baseline. You should see:
@@ -206,12 +214,12 @@ Compare the throughput to the baseline. You should see:
 To see stronger throttling effect, use smaller batches:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-producer-perf-test.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-producer-perf-test.sh \
   --topic events \
   --num-records 10000 \
   --record-size 1000 \
   --throughput -1 \
-  --producer-props bootstrap.servers=localhost:9092 client.id=slow-producer batch.size=1000 linger.ms=0
+  --producer-props bootstrap.servers=kafka-1:19092 client.id=slow-producer batch.size=1000 linger.ms=0
 ```
 
 With smaller batches, you'll see much higher latencies (seconds) as the broker throttles each request.
@@ -221,8 +229,8 @@ With smaller batches, you'll see much higher latencies (seconds) as the broker t
 Limit consumer bandwidth for `slow-consumer`:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --add-config 'consumer_byte_rate=524288' \
   --entity-type clients \
@@ -234,8 +242,8 @@ This limits consumption to 512 KB/s.
 Test it:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-consumer-perf-test.sh \
-  --broker-list localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-consumer-perf-test.sh \
+  --broker-list kafka-1:19092 \
   --topic events \
   --messages 20000 \
   --print-metrics \
@@ -249,8 +257,8 @@ The fetch throughput should be limited to approximately 512 KB/s.
 Set a default quota for all clients without a specific quota:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --add-config 'producer_byte_rate=5242880,consumer_byte_rate=5242880' \
   --entity-type clients \
@@ -262,8 +270,8 @@ This sets 5 MB/s as the default for both producing and consuming.
 Verify:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --entity-default
@@ -274,12 +282,12 @@ docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
 Test with a new client-id that has no specific quota:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-producer-perf-test.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-producer-perf-test.sh \
   --topic events \
   --num-records 20000 \
   --record-size 1000 \
   --throughput -1 \
-  --producer-props bootstrap.servers=localhost:9092 client.id=new-producer
+  --producer-props bootstrap.servers=kafka-1:19092 client.id=new-producer
 ```
 
 The throughput should be limited to approximately 5 MB/s (the default).
@@ -289,8 +297,8 @@ The throughput should be limited to approximately 5 MB/s (the default).
 For SASL-authenticated clusters, you can set quotas per user. Let's simulate this:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --add-config 'producer_byte_rate=10485760,consumer_byte_rate=20971520' \
   --entity-type users \
@@ -304,8 +312,8 @@ This gives user `alice`:
 View user quotas:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type users \
   --entity-name alice
@@ -316,8 +324,8 @@ docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
 Set a quota for a specific user AND client-id combination:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --add-config 'producer_byte_rate=2097152' \
   --entity-type users \
@@ -333,8 +341,8 @@ This limits user `alice` with client-id `batch-producer` to 2 MB/s.
 Limit the percentage of broker I/O threads a client can use:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --add-config 'request_percentage=25' \
   --entity-type clients \
@@ -348,12 +356,12 @@ This limits `limited-client` to 25% of broker request handling capacity.
 Produce rapidly to trigger throttling:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-producer-perf-test.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-producer-perf-test.sh \
   --topic events \
   --num-records 50000 \
   --record-size 1000 \
   --throughput -1 \
-  --producer-props bootstrap.servers=localhost:9092 client.id=slow-producer &
+  --producer-props bootstrap.servers=kafka-1:19092 client.id=slow-producer &
 ```
 
 While it's running, check throttle metrics via JMX (if configured) or observe the reduced throughput in the output.
@@ -364,32 +372,32 @@ View all configured quotas in the cluster:
 
 ```bash
 echo "=== Client Quotas ==="
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --all
 
 echo ""
 echo "=== User Quotas ==="
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type users \
   --all
 
 echo ""
 echo "=== Default Client Quota ==="
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --entity-default
 
 echo ""
 echo "=== Default User Quota ==="
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type users \
   --entity-default
@@ -400,8 +408,8 @@ docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
 Increase the quota for `slow-producer`:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --add-config 'producer_byte_rate=2097152' \
   --entity-type clients \
@@ -415,8 +423,8 @@ Quotas take effect immediately - no restart needed!
 Remove the quota for a specific client:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --delete-config 'producer_byte_rate' \
   --entity-type clients \
@@ -426,8 +434,8 @@ docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
 Verify it's gone:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --entity-name slow-producer
@@ -440,8 +448,8 @@ Let's see how quotas protect against a misbehaving client.
 First, ensure the default quota is set:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --alter \
   --add-config 'producer_byte_rate=1048576' \
   --entity-type clients \
@@ -451,23 +459,23 @@ docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
 Start a "well-behaved" producer in the background:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-producer-perf-test.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-producer-perf-test.sh \
   --topic events \
   --num-records 100000 \
   --record-size 1000 \
   --throughput 500 \
-  --producer-props bootstrap.servers=localhost:9092 client.id=good-producer &
+  --producer-props bootstrap.servers=kafka-1:19092 client.id=good-producer &
 ```
 
 Start the "noisy" producer that tries to overwhelm the cluster:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-producer-perf-test.sh \
+docker exec kafka-client /opt/kafka/bin/kafka-producer-perf-test.sh \
   --topic events \
   --num-records 100000 \
   --record-size 1000 \
   --throughput -1 \
-  --producer-props bootstrap.servers=localhost:9092 client.id=noisy-producer
+  --producer-props bootstrap.servers=kafka-1:19092 client.id=noisy-producer
 ```
 
 The noisy producer will be throttled to 1 MB/s while the good producer continues unaffected.
@@ -485,8 +493,8 @@ Open http://localhost:8080 and:
 Export current quotas to a file (useful for backup/migration):
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --all > quotas-backup.txt
@@ -529,8 +537,8 @@ user + client-id  >  user  >  client-id  >  default user+client  >  default
 Check if it's being throttled:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --entity-name <client-id>
@@ -546,12 +554,16 @@ docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
 
 ```bash
 # List ALL quotas including defaults
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
+docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
+  --bootstrap-server kafka-1:19092 \
   --describe \
   --entity-type clients \
   --all
 ```
+
+### Why use kafka-client instead of exec into brokers?
+
+The `kafka-client` container connects via the internal Docker network (PLAINTEXT listener on port 19092). When running commands directly inside a broker container using the PLAINTEXT_HOST listener, metadata returned by Kafka includes `localhost` addresses that only work from the host machine, not from inside containers.
 
 ## Cleanup
 
@@ -618,6 +630,3 @@ Try these challenges:
 
 1. Set up quotas that vary by time of day (requires external automation)
 2. Create a script that automatically adjusts quotas based on cluster load
-3. Implement quota monitoring with Prometheus and Grafana
-4. Design a quota policy for a 10-team organization sharing one cluster
-5. Test how quotas interact with producer batching and compression
