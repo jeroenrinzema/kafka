@@ -1,4 +1,4 @@
-# Exercise 5.02: SSL/TLS Encryption
+# Exercise 5.03: SSL/TLS Encryption
 
 ## Learning Objectives
 

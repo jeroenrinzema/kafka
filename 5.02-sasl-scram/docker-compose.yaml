@@ -1,0 +1,51 @@
+services:
+  kafka:
+    image: apache/kafka:latest
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./kafka_jaas.conf:/etc/kafka/kafka_jaas.conf:ro
+      - ./start-kafka.sh:/opt/kafka/start-kafka.sh:ro
+    entrypoint: ["/bin/bash", "/opt/kafka/start-kafka.sh"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_PLAINTEXT_HOST:SASL_PLAINTEXT"
+      KAFKA_ADVERTISED_LISTENERS: "SASL_PLAINTEXT_HOST://localhost:9092,SASL_PLAINTEXT://kafka:19092"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:29093"
+      KAFKA_LISTENERS: "CONTROLLER://kafka:29093,SASL_PLAINTEXT_HOST://0.0.0.0:9092,SASL_PLAINTEXT://0.0.0.0:19092"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "SASL_PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: "SCRAM-SHA-256"
+      CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: "/tmp/kraft-combined-logs"
+      # Enable SCRAM authentication mechanisms
+      KAFKA_SASL_ENABLED_MECHANISMS: "SCRAM-SHA-256,SCRAM-SHA-512"
+      # Enable ACL authorization
+      KAFKA_AUTHORIZER_CLASS_NAME: "org.apache.kafka.metadata.authorizer.StandardAuthorizer"
+      # Super users (bypass all ACLs)
+      KAFKA_SUPER_USERS: "User:admin;User:ANONYMOUS"
+      # Allow everyone if no ACL found (for easier testing, set to false in production)
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "true"
+      # JAAS configuration for bootstrap admin user
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/kafka_jaas.conf"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: SCRAM-SHA-256
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="admin" password="admin-secret";'

@@ -284,8 +284,12 @@ rm -f admin.properties
 
 ## Next Steps
 
+Continue to the next exercises:
+- **Exercise 5.02: SASL/SCRAM** - More secure authentication with dynamic user management
+- **Exercise 5.03: SSL/TLS Encryption** - Add encryption for data in transit
+
 In production, consider:
-- SASL/SCRAM for better password security
+- SASL/SCRAM for better password security (no plaintext passwords over the wire)
 - SSL/TLS for encryption
 - More granular ACLs per application
 - Regular ACL audits
