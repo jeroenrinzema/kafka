@@ -1,0 +1,8 @@
+# Generated reassignment plan files
+topics-to-move.json
+reassignment.json
+decommission.json
+manual-reassignment.json
+
+# Output logs
+*.log

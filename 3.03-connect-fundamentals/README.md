@@ -340,9 +340,11 @@ curl -X PUT http://localhost:8083/connectors/file-source/config \
 
 ### Task 9: Apply Single Message Transforms (SMTs)
 
-SMTs allow you to modify messages as they pass through Connect. Let's add a timestamp field to each message.
+SMTs allow you to modify messages as they pass through Connect. Let's add metadata fields to each message.
 
-**Update the source connector with an SMT:**
+> **Note:** The `FileStreamSourceConnector` produces plain string values (not structured records). To add fields, we first need to wrap the string in a struct using `HoistField`, then we can use `InsertField` to add additional fields.
+
+**Update the source connector with SMTs:**
 
 ```bash
 curl -X PUT http://localhost:8083/connectors/file-source/config \
@@ -352,7 +354,9 @@ curl -X PUT http://localhost:8083/connectors/file-source/config \
     "tasks.max": "1",
     "file": "/data/input/server.log",
     "topic": "server-logs",
-    "transforms": "addTimestamp,addSource",
+    "transforms": "hoistToStruct,addTimestamp,addSource",
+    "transforms.hoistToStruct.type": "org.apache.kafka.connect.transforms.HoistField$Value",
+    "transforms.hoistToStruct.field": "line",
     "transforms.addTimestamp.type": "org.apache.kafka.connect.transforms.InsertField$Value",
     "transforms.addTimestamp.timestamp.field": "ingested_at",
     "transforms.addSource.type": "org.apache.kafka.connect.transforms.InsertField$Value",
@@ -360,6 +364,11 @@ curl -X PUT http://localhost:8083/connectors/file-source/config \
     "transforms.addSource.static.value": "webserver-01"
   }' | jq
 ```
+
+This transform chain does the following:
+1. **hoistToStruct**: Wraps the plain string value in a struct: `"log line"` → `{"line": "log line"}`
+2. **addTimestamp**: Adds the ingestion timestamp: `{"line": "...", "ingested_at": 1234567890}`
+3. **addSource**: Adds a static source field: `{"line": "...", "ingested_at": ..., "source_system": "webserver-01"}`
 
 **Add a new line to trigger the transform:**
 
@@ -374,14 +383,19 @@ docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
   --topic server-logs \
   --from-beginning \
-  --property print.key=true \
-  --property print.value=true | tail -5
+  --max-messages 5
+```
+
+You should see JSON objects like:
+```json
+{"line":"2025-01-15 10:00:01 INFO  [main] Application started successfully","ingested_at":1736942400000,"source_system":"webserver-01"}
 ```
 
 **Common SMTs:**
 
 | Transform | Purpose |
 |-----------|---------|
+| `HoistField` | Wrap a primitive value in a struct (essential for working with string data) |
 | `InsertField` | Add static or dynamic fields |
 | `ReplaceField` | Rename, include, or exclude fields |
 | `MaskField` | Mask sensitive data |
@@ -389,6 +403,8 @@ docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
 | `ExtractField` | Extract a field from a struct |
 | `Filter` | Drop messages based on conditions |
 | `RegexRouter` | Route to different topics based on regex |
+
+> **Tip:** SMT order matters! Transforms are applied in the order listed. When working with primitive values (like strings from FileStreamSource), always use `HoistField` first before applying `InsertField` or other struct-based transforms.
 
 ### Task 10: Configure Error Handling and Dead Letter Queue
 

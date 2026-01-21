@@ -35,22 +35,32 @@ Partition reassignment is one of the most common administrative tasks in Kafka. 
 
 ## Architecture
 
-This exercise uses a 4-broker cluster to demonstrate scaling scenarios:
+This exercise uses a 4-broker cluster to demonstrate scaling scenarios.
+
+**Important KRaft Consideration**: In KRaft mode, the controller quorum is fixed at cluster creation. You cannot dynamically add or remove controllers. To scale brokers dynamically, we use:
+- **3 combined broker+controller nodes** (fixed quorum)
+- **1 broker-only node** (can be added/removed dynamically)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Kafka Cluster                             │
-│                                                              │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
-│  │ Broker 1│  │ Broker 2│  │ Broker 3│  │ Broker 4│        │
-│  │ (ID: 1) │  │ (ID: 2) │  │ (ID: 3) │  │ (ID: 4) │        │
-│  │         │  │         │  │         │  │ (new)   │        │
-│  │ P0-L    │  │ P0-F    │  │ P1-L    │  │         │        │
-│  │ P2-F    │  │ P1-F    │  │ P2-L    │  │         │        │
-│  └─────────┘  └─────────┘  └─────────┘  └─────────┘        │
-│                                                              │
-│  L = Leader, F = Follower, P = Partition                    │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Kafka Cluster (KRaft Mode)                    │
+│                                                                  │
+│  Controller Quorum (Fixed - 3 nodes)                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐              │
+│  │  Broker 1   │  │  Broker 2   │  │  Broker 3   │              │
+│  │ (ID: 1)     │  │ (ID: 2)     │  │ (ID: 3)     │              │
+│  │ broker +    │  │ broker +    │  │ broker +    │              │
+│  │ controller  │  │ controller  │  │ controller  │              │
+│  └─────────────┘  └─────────────┘  └─────────────┘              │
+│                                                                  │
+│  Broker Only (Dynamic - can add/remove)                         │
+│  ┌─────────────┐                                                │
+│  │  Broker 4   │  ← Added dynamically, no controller role       │
+│  │ (ID: 4)     │    Observes quorum but doesn't vote            │
+│  │ broker only │                                                │
+│  └─────────────┘                                                │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Prerequisites
@@ -73,9 +83,11 @@ Wait about 15 seconds for the cluster to initialize.
 Verify all brokers are running:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-broker-api-versions.sh \
-  --bootstrap-server localhost:9092 | head -5
+docker exec kafka-1 /opt/kafka/bin/kafka-metadata-quorum.sh \
+  --bootstrap-server kafka-1:19092 describe --status
 ```
+
+You should see 3 voters in the `CurrentVoters` list.
 
 ### Task 2: Create a Test Topic
 
@@ -85,7 +97,7 @@ Create a topic with partitions spread across the 3 brokers:
 docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
   --create \
   --topic orders \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --partitions 6 \
   --replication-factor 2
 ```
@@ -98,7 +110,7 @@ View the current partition assignment:
 docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic orders \
-  --bootstrap-server localhost:9092
+  --bootstrap-server kafka-1:19092
 ```
 
 Note which brokers hold which partitions. You'll see output like:
@@ -119,26 +131,27 @@ docker exec kafka-1 /opt/kafka/bin/kafka-producer-perf-test.sh \
   --num-records 10000 \
   --record-size 1000 \
   --throughput 1000 \
-  --producer-props bootstrap.servers=localhost:9092
+  --producer-props bootstrap.servers=kafka-1:19092
 ```
 
-Record the number of messages produced.
+Record the number of messages produced (should be 10,000).
 
 ### Task 5: Add a New Broker
 
-Scale up by adding broker 4:
+Scale up by adding broker 4 (a broker-only node):
 
 ```bash
-docker compose up -d kafka-4
+docker compose --profile scale up -d kafka-4
 ```
 
 Wait 10 seconds, then verify broker 4 has joined:
 
 ```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-metadata.sh \
-  --snapshot /var/kafka-logs/__cluster_metadata-0/00000000000000000000.log \
-  --command "broker-ids"
+docker exec kafka-1 /opt/kafka/bin/kafka-metadata-quorum.sh \
+  --bootstrap-server kafka-1:19092 describe --replication
 ```
+
+You should see broker 4 listed as an **Observer** (broker-only nodes observe the quorum but don't vote).
 
 Or check via Kafka UI at http://localhost:8080
 
@@ -150,7 +163,7 @@ The new broker has no partitions yet. Verify:
 docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic orders \
-  --bootstrap-server localhost:9092
+  --bootstrap-server kafka-1:19092
 ```
 
 Broker 4 should not appear in any Replicas list.
@@ -180,7 +193,7 @@ Generate a reassignment plan that includes broker 4:
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --topics-to-move-json-file /tmp/topics-to-move.json \
   --broker-list "1,2,3,4" \
   --generate
@@ -190,27 +203,22 @@ This outputs two JSON blocks:
 1. **Current assignment** - Save this for rollback!
 2. **Proposed assignment** - The new layout including broker 4
 
-### Task 8: Save the Reassignment Plans
+### Task 8: Save the Reassignment Plan
 
-Save the proposed reassignment plan:
+Copy the **Proposed partition reassignment configuration** from the previous command output and save it:
 
 ```bash
 cat > reassignment.json << 'EOF'
-{
-  "version": 1,
-  "partitions": [
-    {"topic": "orders", "partition": 0, "replicas": [1, 4]},
-    {"topic": "orders", "partition": 1, "replicas": [2, 1]},
-    {"topic": "orders", "partition": 2, "replicas": [3, 2]},
-    {"topic": "orders", "partition": 3, "replicas": [4, 3]},
-    {"topic": "orders", "partition": 4, "replicas": [1, 4]},
-    {"topic": "orders", "partition": 5, "replicas": [2, 1]}
-  ]
-}
+<PASTE THE PROPOSED ASSIGNMENT JSON HERE>
 EOF
 ```
 
-> **Note**: Replace the content above with the actual "Proposed partition reassignment configuration" from the previous command.
+For example:
+```bash
+cat > reassignment.json << 'EOF'
+{"version":1,"partitions":[{"topic":"orders","partition":0,"replicas":[1,4],"log_dirs":["any","any"]},{"topic":"orders","partition":1,"replicas":[2,1],"log_dirs":["any","any"]},{"topic":"orders","partition":2,"replicas":[3,2],"log_dirs":["any","any"]},{"topic":"orders","partition":3,"replicas":[4,3],"log_dirs":["any","any"]},{"topic":"orders","partition":4,"replicas":[1,2],"log_dirs":["any","any"]},{"topic":"orders","partition":5,"replicas":[2,3],"log_dirs":["any","any"]}]}
+EOF
+```
 
 Copy to container:
 
@@ -224,7 +232,7 @@ Execute the reassignment with bandwidth throttling to protect production traffic
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 5000000 \
   --execute
@@ -238,61 +246,18 @@ Check the status of the reassignment:
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --reassignment-json-file /tmp/reassignment.json \
   --verify
 ```
 
 You'll see one of:
 - `Reassignment of partition orders-X is still in progress`
-- `Reassignment of partition orders-X is complete`
+- `Reassignment of partition orders-X is completed`
 
-Run this command repeatedly until all partitions show complete.
+Run this command repeatedly until all partitions show complete. The `--verify` command also clears throttle configs when reassignment is complete.
 
-### Task 11: Remove Throttling
-
-After reassignment completes, remove the throttle:
-
-```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
-  --reassignment-json-file /tmp/reassignment.json \
-  --verify
-```
-
-If throttling configs remain, remove them explicitly:
-
-```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
-  --entity-type brokers \
-  --entity-name 1 \
-  --alter \
-  --delete-config leader.replication.throttled.rate,follower.replication.throttled.rate
-
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
-  --entity-type brokers \
-  --entity-name 2 \
-  --alter \
-  --delete-config leader.replication.throttled.rate,follower.replication.throttled.rate
-
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
-  --entity-type brokers \
-  --entity-name 3 \
-  --alter \
-  --delete-config leader.replication.throttled.rate,follower.replication.throttled.rate
-
-docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh \
-  --bootstrap-server localhost:9092 \
-  --entity-type brokers \
-  --entity-name 4 \
-  --alter \
-  --delete-config leader.replication.throttled.rate,follower.replication.throttled.rate
-```
-
-### Task 12: Verify New Distribution
+### Task 11: Verify New Distribution
 
 Check that broker 4 now has partitions:
 
@@ -300,34 +265,32 @@ Check that broker 4 now has partitions:
 docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic orders \
-  --bootstrap-server localhost:9092
+  --bootstrap-server kafka-1:19092
 ```
 
 Broker 4 should now appear in the Replicas lists!
 
-### Task 13: Verify Data Integrity
+### Task 12: Verify Data Integrity
 
 Consume all messages to verify no data was lost:
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-consumer-perf-test.sh \
-  --broker-list localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --topic orders \
-  --messages 10000 \
-  --print-metrics
+  --messages 10000
 ```
 
-The message count should match what was produced earlier.
+The message count should match what was produced earlier (10,000).
 
-### Task 14: Trigger Preferred Leader Election
+### Task 13: Trigger Preferred Leader Election
 
 After reassignment, the first replica in the list should be the leader (preferred replica). If not, trigger an election:
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-leader-election.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --election-type preferred \
-  --topic orders \
   --all-topic-partitions
 ```
 
@@ -337,10 +300,10 @@ Verify leaders match preferred replicas:
 docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic orders \
-  --bootstrap-server localhost:9092
+  --bootstrap-server kafka-1:19092
 ```
 
-### Task 15: Decommission a Broker
+### Task 14: Decommission a Broker
 
 Now let's remove broker 3 from the cluster. First, move all its partitions away.
 
@@ -348,45 +311,39 @@ Generate a plan excluding broker 3:
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --topics-to-move-json-file /tmp/topics-to-move.json \
   --broker-list "1,2,4" \
   --generate
 ```
 
-Save the proposed assignment and execute it:
+Save the proposed assignment:
 
 ```bash
 cat > decommission.json << 'EOF'
-{
-  "version": 1,
-  "partitions": [
-    {"topic": "orders", "partition": 0, "replicas": [1, 4]},
-    {"topic": "orders", "partition": 1, "replicas": [2, 1]},
-    {"topic": "orders", "partition": 2, "replicas": [4, 2]},
-    {"topic": "orders", "partition": 3, "replicas": [1, 4]},
-    {"topic": "orders", "partition": 4, "replicas": [2, 1]},
-    {"topic": "orders", "partition": 5, "replicas": [4, 2]}
-  ]
-}
+<PASTE THE PROPOSED ASSIGNMENT JSON HERE - excluding broker 3>
 EOF
 
 docker cp decommission.json kafka-1:/tmp/decommission.json
+```
 
+Execute the decommission plan:
+
+```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --reassignment-json-file /tmp/decommission.json \
   --throttle 10000000 \
   --execute
 ```
 
-### Task 16: Wait and Verify Decommission
+### Task 15: Wait and Verify Decommission
 
 Monitor progress:
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --reassignment-json-file /tmp/decommission.json \
   --verify
 ```
@@ -397,68 +354,62 @@ Once complete, verify broker 3 has no partitions:
 docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --topic orders \
-  --bootstrap-server localhost:9092
+  --bootstrap-server kafka-1:19092
 ```
 
 Broker 3 should not appear in any Replicas list.
 
-### Task 17: Stop the Decommissioned Broker
+### Task 16: Understanding Controller Quorum Limitations
 
-Now it's safe to stop broker 3:
+**Important**: In KRaft mode, broker 3 is part of the controller quorum. Even though it has no topic partitions, you **cannot remove it from the cluster** without reconfiguring the entire quorum. This is why:
+
+- Controllers (voters) are fixed at cluster creation
+- Only broker-only nodes can be truly decommissioned
+- In production, use separate controller-only nodes for flexibility
+
+You can stop broker 3's broker role, but the controller will continue running:
 
 ```bash
 docker compose stop kafka-3
 ```
 
-Verify the cluster still works:
+> **Note**: This will cause the cluster to lose quorum if you also stop another controller. The cluster needs a majority of controllers (2 out of 3) to function.
 
-```bash
-docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
-  --list \
-  --bootstrap-server localhost:9092
-```
-
-### Task 18: Cancel an In-Progress Reassignment (Optional)
+### Task 17: Cancel an In-Progress Reassignment (Optional)
 
 If you ever need to cancel a reassignment, use:
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --reassignment-json-file /tmp/reassignment.json \
   --cancel
 ```
 
 This stops any in-progress reassignments and rolls back to the original state.
 
-### Task 19: Create a Custom Reassignment Plan
-
-Sometimes you need precise control. Create a manual plan:
-
-```bash
-cat > manual-reassignment.json << 'EOF'
-{
-  "version": 1,
-  "partitions": [
-    {"topic": "orders", "partition": 0, "replicas": [4, 1], "log_dirs": ["any", "any"]},
-    {"topic": "orders", "partition": 1, "replicas": [1, 2], "log_dirs": ["any", "any"]}
-  ]
-}
-EOF
-```
-
-The `log_dirs` field allows specifying exact directories on brokers with multiple disks.
-
-### Task 20: View in Kafka UI
+### Task 18: View in Kafka UI
 
 Open http://localhost:8080 and:
 
 1. Navigate to Topics → orders
 2. Click on "Partitions" tab
 3. Observe the Leader and Replicas for each partition
-4. Notice how partitions are now spread across brokers 1, 2, and 4
+4. Notice how partitions are distributed across brokers
 
 ## Key Concepts
+
+### KRaft Mode and Dynamic Scaling
+
+| Node Type | Can Add Dynamically? | Can Remove Dynamically? |
+|-----------|---------------------|------------------------|
+| broker + controller | No | No |
+| broker only | Yes | Yes |
+| controller only | No | No |
+
+For production clusters that need to scale:
+- Use **separate controller-only nodes** (typically 3 or 5)
+- Add/remove **broker-only nodes** as needed
 
 ### Reassignment JSON Format
 
@@ -495,11 +446,12 @@ Factors to consider:
 
 ### Common Pitfalls
 
-1. **Forgetting to remove throttle**: Leaves configs on topics and brokers
+1. **Forgetting to remove throttle**: The `--verify` command removes it automatically when complete
 2. **Too aggressive throttling**: Reassignment takes forever
 3. **No throttling at all**: Can overwhelm network and impact production
 4. **Not saving original assignment**: Can't rollback if needed
 5. **Stopping broker before reassignment completes**: Data loss risk!
+6. **Trying to remove controller nodes**: Not possible without cluster reconfiguration
 
 ## Troubleshooting
 
@@ -511,7 +463,7 @@ Check for under-replicated partitions:
 docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh \
   --describe \
   --under-replicated-partitions \
-  --bootstrap-server localhost:9092
+  --bootstrap-server kafka-1:19092
 ```
 
 Check broker logs:
@@ -522,11 +474,11 @@ docker logs kafka-4 | grep -i "reassign\|replica"
 
 ### Throttle Too Low
 
-Increase the throttle:
+Increase the throttle by re-executing with a higher value:
 
 ```bash
 docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
-  --bootstrap-server localhost:9092 \
+  --bootstrap-server kafka-1:19092 \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 50000000 \
   --execute
@@ -537,23 +489,27 @@ docker exec kafka-1 /opt/kafka/bin/kafka-reassign-partitions.sh \
 Check disk usage before reassignment:
 
 ```bash
-docker exec kafka-1 df -h /var/kafka-logs
+docker exec kafka-1 df -h /tmp/kraft-combined-logs
 ```
 
 During reassignment, new replicas use additional space until old ones are removed.
+
+### Connection Errors
+
+If you see connection errors, make sure you're using the internal network address (`kafka-1:19092`) rather than `localhost:9092` when running commands inside containers.
 
 ## Cleanup
 
 Stop all services:
 
 ```bash
-docker compose down -v
+docker compose --profile scale down -v
 ```
 
 Remove temporary files:
 
 ```bash
-rm -f topics-to-move.json reassignment.json decommission.json manual-reassignment.json
+rm -f topics-to-move.json reassignment.json decommission.json
 ```
 
 ## Best Practices
@@ -565,19 +521,21 @@ rm -f topics-to-move.json reassignment.json decommission.json manual-reassignmen
 5. **Test the procedure** in a non-production environment first
 6. **Verify data integrity** after reassignment completes
 7. **Run preferred leader election** after reassignment
-8. **Clean up throttle configs** when done
+8. **Use broker-only nodes** for dynamic scaling in KRaft mode
+9. **Plan your controller quorum size** at cluster creation (cannot change later)
 
 ## Additional Resources
 
 - [Kafka Operations Documentation](https://kafka.apache.org/documentation/#operations)
 - [KIP-455: Replica Reassignment Improvements](https://cwiki.apache.org/confluence/display/KAFKA/KIP-455%3A+Create+an+Administrative+API+for+Replica+Reassignment)
+- [KRaft Mode Documentation](https://kafka.apache.org/documentation/#kraft)
 - [Confluent Partition Reassignment Guide](https://docs.confluent.io/platform/current/kafka/post-deployment.html#partition-reassignment)
 
 ## Next Steps
 
 Try these challenges:
 
-1. Create a 6-broker cluster and practice large-scale rebalancing
+1. Create a 6-broker cluster with 3 controllers and 3 broker-only nodes
 2. Implement a script that automatically generates balanced reassignment plans
 3. Set up monitoring to alert when reassignment is in progress
 4. Practice reassignment with rack-aware placement

@@ -239,18 +239,24 @@ docker exec kafka-client /opt/kafka/bin/kafka-configs.sh \
 
 This limits consumption to 512 KB/s.
 
-Test it:
+Test it by first creating a config file with the client-id:
+
+```bash
+docker exec kafka-client bash -c 'echo "client.id=slow-consumer" > /tmp/consumer.properties'
+```
+
+Then run the consumer perf test:
 
 ```bash
 docker exec kafka-client /opt/kafka/bin/kafka-consumer-perf-test.sh \
-  --broker-list kafka-1:19092 \
+  --bootstrap-server kafka-1:19092 \
   --topic events \
   --messages 20000 \
-  --print-metrics \
-  -- --group slow-group --consumer-property client.id=slow-consumer
+  --group slow-group \
+  --consumer.config /tmp/consumer.properties
 ```
 
-The fetch throughput should be limited to approximately 512 KB/s.
+The fetch throughput should be limited to approximately 512 KB/s per broker. With data spread across multiple brokers, you may see higher aggregate throughput.
 
 ### Task 7: Set Default Quotas
 

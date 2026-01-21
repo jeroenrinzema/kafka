@@ -350,11 +350,11 @@ Start watching the orders topic:
 ```bash
 docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
-  --topic dbserver.shop.orders &
+  --topic dbserver.shop.orders
 
 docker exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
   --bootstrap-server localhost:9092 \
-  --topic dbserver.shop.order_items &
+  --topic dbserver.shop.order_items
 ```
 
 Create a new order with items (in a transaction):
